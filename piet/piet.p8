@@ -6,12 +6,14 @@ y=0
 midpat=0xaaaa
 pxsize=2
 gridsize=pxsize+2
+editing=0
 
 function _update()
   if(btnp(0)) then x-=1 end
   if(btnp(1)) then x+=1 end
   if(btnp(2)) then y-=1 end
   if(btnp(3)) then y+=1 end
+  if(btnp(4)) then editing=1-editing end
   
   if(x<0) then x=0 end
   if(y<0) then y=0 end
@@ -22,12 +24,18 @@ end
 
 function _draw()
   cls()
+	 if(editing==0) then
+	   framecolor=7
+	 else
+	   framecolor=10
+	 end
+
   rect(
     x*gridsize,
     y*gridsize,
     (x+1)*gridsize-1,
     (y+1)*gridsize-1,
-    7
+    framecolor
   )
 end
 __gfx__
