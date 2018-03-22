@@ -84,19 +84,19 @@ end
 
 function _draw()
   cls()
-	 if(editing==0) then
-	   framecolor=7
-	 else
-	   framecolor=10
-	 end
-	 
-	 rectfill(
-	   x*gridsize,
+  if(editing==0) then
+    framecolor=7
+  else
+    framecolor=10
+  end
+  
+  rectfill(
+    x*gridsize,
     y*gridsize,
     (x+1)*gridsize-1,
     (y+1)*gridsize-1,
     getcol(getpx(x,y))
-	 )
+  )
   rect(
     x*gridsize,
     y*gridsize,
