@@ -28,24 +28,24 @@ function getpx(x,y)
 end
 
 function setpx(x,y,px)
-  mset(x,y,px.y + shl(px.x,4))
+  mset(x,y,px.val + shl(px.hue,4))
 end
 
 function getcol(px)
-  if(px.y==0) then
-    return 7*(1-px.x)
+  if(px.val==0) then
+    return 7*(1-px.hue)
   else
     print("getcolor")
-    local rowa = lshr(px.y-1,1)
-    local rowb = lshr(px.y,1)
+    local rowa = lshr(px.val-1,1)
+    local rowb = lshr(px.val,1)
     
-    print(px.x)
-    print(px.y)
+    print(px.hue)
+    print(px.val)
     print(rowa)
     print(rowb)
     
-    local cola = colormap[rowa*numhues+px.x+1]
-    local colb = colormap[rowb*numhues+px.x+1]
+    local cola = colormap[rowa*numhues+px.hue+1]
+    local colb = colormap[rowb*numhues+px.hue+1]
     return cola + shl(colb, 4)
   end
 end
@@ -56,15 +56,16 @@ function _update()
   if(editing==1) then
     local px = getpx(x,y)
     
-    if(btnp(0)) px.x+=1
-    if(btnp(1)) px.x-=1
-    if(btnp(2)) px.y+=1
-    if(btnp(3)) px.y-=1
+    if(btnp(0)) px.hue+=1
+    if(btnp(1)) px.hue-=1
+    if(btnp(2)) px.val+=1
+    if(btnp(3)) px.val-=1
     
-    if(px.y==0) then
-      px.x %= 2
+    px.val %= 3
+    if(px.val==0) then
+      px.hue %= 2
     else
-      px.x %= 6
+      px.hue %= 6
     end
     
     setpx(x,y,px)
