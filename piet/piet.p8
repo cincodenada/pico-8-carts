@@ -3,7 +3,7 @@ version 16
 __lua__
 x=0
 y=0
-solidpat=0xffff
+solidpat=0x0000
 midpat=0xa5a5
 pxsize=6
 gridsize=pxsize+2
@@ -16,12 +16,12 @@ colormap={
 }
 
 function getpx(x,y)
-  curval = mget(x,y)
+  local curval = mget(x,y)
   
   print("getpx")
   print(curval)
-  row = band(curval,0x0f)
-  col = lshr(band(curval,0xf0),4)
+  local row = band(curval,0x0f)
+  local col = lshr(band(curval,0xf0),4)
   print(row)
   print(col)
 
@@ -91,11 +91,9 @@ end
 
 function _draw()
   cls()
-  if(editing==0) then
-    framecolor=7
-  else
-    framecolor=10
-  end
+  local framecolor=7
+  // yellow frame for editing
+  if(editing==1) framecolor=10
   
   local px = getpx(x,y)
   if(px.val==2) then
