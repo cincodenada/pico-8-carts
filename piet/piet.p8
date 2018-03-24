@@ -36,7 +36,7 @@ function getcol(px)
   if(px.val==0) then
     // easy, 0/1 to either
     // black (0) or white (7)
-    return 7*(1-px.hue)
+    return 7*(band(px.hue/3,0x01))
   else
     // proper colors
     print("getcolor")
@@ -62,17 +62,18 @@ function _update()
   if(editing==1) then
     local px = getpx(x,y)
     
-    if(btnp(0)) px.hue-=1
-    if(btnp(1)) px.hue+=1
+    // handle moving from hues
+    // to black/white and back
+    local hueinc=1
+    if(px.val==0) hueinc=3
+            
+    if(btnp(0)) px.hue-=hueinc
+    if(btnp(1)) px.hue+=hueinc
     if(btnp(2)) px.val-=1
     if(btnp(3)) px.val+=1
     
     px.val %= 4
-    if(px.val==0) then
-      px.hue %= 2
-    else
-      px.hue %= 6
-    end
+    px.hue %= 6
     
     setpx(x,y,px)
   else
