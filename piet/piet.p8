@@ -3,8 +3,9 @@ version 16
 __lua__
 x=0
 y=0
+solidpat=0xffff
 midpat=0xaaaa
-pxsize=2
+pxsize=5
 gridsize=pxsize+2
 editing=0
 
@@ -20,11 +21,11 @@ function getpx(x,y)
   print("getpx")
   print(curval)
   row = band(curval,0x0f)
-  col = lshr(curval,4)
+  col = lshr(band(curval,0xf0),4)
   print(row)
   print(col)
 
-  return {y = row, x = col}
+  return {val = row, hue = col}
 end
 
 function setpx(x,y,px)
@@ -33,9 +34,13 @@ end
 
 function getcol(px)
   if(px.val==0) then
+    // easy, 0/1 to either
+    // black (0) or white (7)
     return 7*(1-px.hue)
   else
+    // proper colors
     print("getcolor")
+    // rows to get fg/bg colors
     local rowa = lshr(px.val-1,1)
     local rowb = lshr(px.val,1)
     
@@ -44,6 +49,7 @@ function getcol(px)
     print(rowa)
     print(rowb)
     
+    // get colors from map
     local cola = colormap[rowa*numhues+px.hue+1]
     local colb = colormap[rowb*numhues+px.hue+1]
     return cola + shl(colb, 4)
@@ -56,12 +62,12 @@ function _update()
   if(editing==1) then
     local px = getpx(x,y)
     
-    if(btnp(0)) px.hue+=1
-    if(btnp(1)) px.hue-=1
-    if(btnp(2)) px.val+=1
-    if(btnp(3)) px.val-=1
+    if(btnp(0)) px.hue-=1
+    if(btnp(1)) px.hue+=1
+    if(btnp(2)) px.val-=1
+    if(btnp(3)) px.val+=1
     
-    px.val %= 3
+    px.val %= 4
     if(px.val==0) then
       px.hue %= 2
     else
@@ -91,13 +97,22 @@ function _draw()
     framecolor=10
   end
   
+  local px = getpx(x,y)
+  if(px.val==2) then
+    // middle row
+    fillp(midpat)
+  else
+    fillp(solidpat)
+  end
+  
   rectfill(
     x*gridsize,
     y*gridsize,
     (x+1)*gridsize-1,
     (y+1)*gridsize-1,
-    getcol(getpx(x,y))
+    getcol(px)
   )
+  fillp(solidpat)
   rect(
     x*gridsize,
     y*gridsize,
