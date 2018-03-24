@@ -4,8 +4,8 @@ __lua__
 x=0
 y=0
 solidpat=0xffff
-midpat=0xaaaa
-pxsize=5
+midpat=0xa5a5
+pxsize=6
 gridsize=pxsize+2
 editing=0
 
@@ -41,8 +41,8 @@ function getcol(px)
     // proper colors
     print("getcolor")
     // rows to get fg/bg colors
-    local rowa = lshr(px.val-1,1)
-    local rowb = lshr(px.val,1)
+    local rowa = band(lshr(px.val-1,1),0xf)
+    local rowb = band(lshr(px.val,1),0xf)
     
     print(px.hue)
     print(px.val)
