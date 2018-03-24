@@ -35,8 +35,8 @@ end
 function getcol(px)
   if(px.val==0) then
     // easy, 0/1 to either
-    // black (0) or white (7)
-    return 7*(band(px.hue/3,0x01))
+    // white (7) or black(0)
+    return 7*(1-band(px.hue/3,0x01))
   else
     // proper colors
     print("getcolor")
@@ -92,9 +92,9 @@ end
 
 function _draw()
   cls()
-  local framecolor=7
+  local framecolor=5
   // yellow frame for editing
-  if(editing==1) framecolor=10
+  if(editing==1) framecolor=4
   
   local px = getpx(x,y)
   if(px.val==2) then
