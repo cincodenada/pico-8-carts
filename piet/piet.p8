@@ -18,12 +18,12 @@ colormap={
 function getpx(x,y)
   local curval = mget(x,y)
   
-  print("getpx")
-  print(curval)
+  //print("getpx")
+  //print(curval)
   local row = band(curval,0x0f)
   local col = lshr(band(curval,0xf0),4)
-  print(row)
-  print(col)
+  //print(row)
+  //print(col)
 
   return {val = row, hue = col}
 end
@@ -39,15 +39,15 @@ function getcol(px)
     return 7*(1-band(px.hue/3,0x01))
   else
     // proper colors
-    print("getcolor")
+    //print("getcolor")
     // rows to get fg/bg colors
     local rowa = band(lshr(px.val-1,1),0xf)
     local rowb = band(lshr(px.val,1),0xf)
     
-    print(px.hue)
-    print(px.val)
-    print(rowa)
-    print(rowb)
+    //print(px.hue)
+    //print(px.val)
+    //print(rowa)
+    //print(rowb)
     
     // get colors from map
     local cola = colormap[rowa*numhues+px.hue+1]
@@ -90,12 +90,7 @@ function _update()
   if(y>63) then y=63 end
 end
 
-function _draw()
-  cls()
-  local framecolor=5
-  // yellow frame for editing
-  if(editing==1) framecolor=4
-  
+function drawpx(x,y)
   local px = getpx(x,y)
   if(px.val==2) then
     // middle row
@@ -112,6 +107,22 @@ function _draw()
     getcol(px)
   )
   fillp(solidpat)
+end
+
+function _draw()
+  cls()
+  gridwidth=128/(pxsize+2)
+  for x=0,gridwidth do
+    for y=0,gridwidth do
+      drawpx(x,y)
+    end
+  end
+      
+  local framecolor=5
+  // yellow frame for editing
+  if(editing==1) framecolor=4
+  
+  // draw selection rectangle
   rect(
     x*gridsize,
     y*gridsize,
