@@ -90,9 +90,12 @@ function _update()
 	if(y>63) then y=63 end
 end
 
-function drawpx(x,y)
-	local px = getpx(x,y)
-	if(px.val==2) then
+function draw_px(x,y)
+	draw_codel(x,y,gridsize,getpx(x,y))
+end
+
+function draw_codel(x,y,gs,col)
+	if(col.val==2) then
 		// middle row
 		fillp(midpat)
 	else
@@ -100,37 +103,59 @@ function drawpx(x,y)
 	end
 	
 	rectfill(
-		x*gridsize,
-		y*gridsize,
-		(x+1)*gridsize-1,
-		(y+1)*gridsize-1,
-		getcol(px)
+		x*gs,
+		y*gs,
+		(x+1)*gs-1,
+		(y+1)*gs-1,
+		getcol(col)
 	)
+
+	// reset fillpat
 	fillp(solidpat)
+end
+
+function draw_frame(x,y,gs,col)
+	rect(
+		x*gs,
+		y*gs,
+		(x+1)*gs-1,
+		(y+1)*gs-1,
+		col
+	)
 end
 
 function _draw()
 	cls()
 	gridwidth=128/(pxsize+2)
 	for x=0,gridwidth do
-		for y=0,gridwidth do
-			drawpx(x,y)
+		for y=0,gridwidth-4 do
+			draw_px(x,y)
 		end
 	end
+
+	draw_palette()
 			
 	local framecolor=5
 	// yellow frame for editing
 	if(editing==1) framecolor=4
 	
 	// draw selection rectangle
-	rect(
-		x*gridsize,
-		y*gridsize,
-		(x+1)*gridsize-1,
-		(y+1)*gridsize-1,
-		framecolor
-	)
+	draw_frame(x,y,gridsize,framecolor)
 end
+
+function draw_palette()
+	local size=4
+	local top=128/size-4
+	for x=0,numhues-1 do
+		for y=1,4 do
+			draw_codel(x,top+y-2,size,{val = y%4, hue = x})
+		end
+	end
+	
+	local curhv = getpx(x,y)
+	draw_frame(curhv.hue,top+(curhv.val-1)%4-1,size,5)
+end
+
 __gfx__
 0088993311dd22000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0088993311dd22000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
