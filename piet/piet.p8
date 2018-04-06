@@ -163,9 +163,7 @@ function draw_palette()
 	end
 	
 	local curhv = getpx(x,y)
-	local disphue = curhv.hue
-	if (curhv.val==3) disphue = flr(disphue/3)*3+1
-	draw_dot(disphue,top+curhv.val-1,size,5)
+	draw_dot(curhv.hue,top+curhv.val-1,size,5)
 end
 
 __gfx__
