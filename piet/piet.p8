@@ -33,7 +33,7 @@ function setpx(x,y,px)
 end
 
 function getcol(px)
-	if(px.val==0) then
+	if(px.val==3) then
 		// easy, 0/1 to either
 		// white (7) or black(0)
 		return 7*(1-band(px.hue/3,0x01))
@@ -41,8 +41,8 @@ function getcol(px)
 		// proper colors
 		//print("getcolor")
 		// rows to get fg/bg colors
-		local rowa = band(lshr(px.val-1,1),0xf)
-		local rowb = band(lshr(px.val,1),0xf)
+		local rowa = band(lshr(px.val,1),0xf)
+		local rowb = band(lshr(px.val+1,1),0xf)
 		
 		//print(px.hue)
 		//print(px.val)
@@ -65,7 +65,7 @@ function _update()
 		// handle moving from hues
 		// to black/white and back
 		local hueinc=1
-		if(px.val==0) hueinc=3
+		if(px.val==3) hueinc=3
 						
 		if(btnp(0)) px.hue-=hueinc
 		if(btnp(1)) px.hue+=hueinc
@@ -95,7 +95,7 @@ function draw_px(x,y)
 end
 
 function draw_codel(x,y,gs,col)
-	if(col.val==2) then
+	if(col.val==1) then
 		// middle row
 		fillp(midpat)
 	else
@@ -147,13 +147,13 @@ function draw_palette()
 	local size=4
 	local top=128/size-4
 	for x=0,numhues-1 do
-		for y=1,4 do
-			draw_codel(x,top+y-2,size,{val = y%4, hue = x})
+		for y=0,3 do
+			draw_codel(x,top+y-1,size,{val = y, hue = x})
 		end
 	end
 	
 	local curhv = getpx(x,y)
-	draw_frame(curhv.hue,top+(curhv.val-1)%4-1,size,5)
+	draw_frame(curhv.hue,top+curhv.val-1,size,5)
 end
 
 __gfx__
