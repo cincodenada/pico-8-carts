@@ -11,8 +11,8 @@ editing=0
 
 numhues=6
 colormap={
-	8,9,3,1,13,2,
-	15,10,11,12,6,14
+	15,10,11,12,6,14,
+	8,9,3,1,13,2
 }
 
 function getpx(x,y)
@@ -124,11 +124,21 @@ function draw_frame(x,y,gs,col)
 	)
 end
 
+function draw_dot(x,y,gs,col)
+	rect(
+		x*gs+gs/2-1,
+		y*gs+gs/2-1,
+		x*gs+gs/2,
+		y*gs+gs/2,
+		col
+	)
+end
+
 function _draw()
 	cls()
 	gridwidth=128/(pxsize+2)
 	for x=0,gridwidth do
-		for y=0,gridwidth-4 do
+		for y=0,gridwidth do
 			draw_px(x,y)
 		end
 	end
@@ -146,14 +156,16 @@ end
 function draw_palette()
 	local size=4
 	local top=128/size-4
-	for x=0,numhues-1 do
-		for y=0,3 do
+	for y=0,3 do
+		for x=0,numhues-1 do
 			draw_codel(x,top+y-1,size,{val = y, hue = x})
 		end
 	end
 	
 	local curhv = getpx(x,y)
-	draw_frame(curhv.hue,top+curhv.val-1,size,5)
+	local disphue = curhv.hue
+	if (curhv.val==3) disphue = flr(disphue/3)*3+1
+	draw_dot(disphue,top+curhv.val-1,size,5)
 end
 
 __gfx__
