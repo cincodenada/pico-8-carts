@@ -13,6 +13,14 @@ function mksel(x,y,...)
 	return sel
 end
 
+function sgn(n)
+	if(n<0) then
+		return -1
+	else
+		return 1
+	end
+end
+
 sel=mksel(0,0)
 solidpat=0x0000
 midpat=0xa5a5
@@ -30,8 +38,8 @@ colormap={
 	8,9,3,1,13,2
 }
 
-function getpx(x,y)
-	local curval = mget(x,y)
+function getpx(sel)
+	local curval = mget(sel.x,sel.y)
 	
 	-- print("getpx")
 	-- print(curval)
@@ -43,8 +51,12 @@ function getpx(x,y)
 	return {val = row, hue = col}
 end
 
-function setpx(x,y,px)
-	mset(x,y,px.val + shl(px.hue,4))
+function setpx(sel,px)
+	for x=sel.x,sel.x+sel.w,sgn(sel.w) do
+		for y=sel.y,sel.y+sel.h,sgn(sel.h) do
+			mset(x,y,px.val + shl(px.hue,4))
+		end
+	end
 end
 
 function getcol(px)
@@ -90,7 +102,7 @@ function _update()
 	end
 
 	if(edit_mode==2) then
-		local px = getpx(sel.x,sel.y)
+		local px = getpx(sel)
 		
 		-- handle moving from hues
 		-- to black/white and back
@@ -105,7 +117,7 @@ function _update()
 		px.val %= 4
 		px.hue %= 6
 		
-		setpx(sel.x,sel.y,px)
+		setpx(sel,px)
 	elseif (edit_mode==1) then
 		if(btnp(0)) sel.w-=1
 		if(btnp(1)) sel.w+=1
@@ -125,11 +137,11 @@ function _update()
 	if(sel.y>63) then sel.y=63 end
 end
 
-function draw_px(x,y)
-	draw_codel(x,y,gridsize,getpx(x,y))
+function draw_px(sel)
+	draw_codel(sel,gridsize,getpx(sel))
 end
 
-function draw_codel(x,y,gs,col)
+function draw_codel(sel,gs,col)
 	if(col.val==1) then
 		-- middle row
 		fillp(midpat)
@@ -138,10 +150,10 @@ function draw_codel(x,y,gs,col)
 	end
 	
 	rectfill(
-		x*gs,
-		y*gs,
-		(x+1)*gs-1,
-		(y+1)*gs-1,
+		sel.x*gs,
+		sel.y*gs,
+		(sel.x+1)*gs-1,
+		(sel.y+1)*gs-1,
 		getcol(col)
 	)
 
@@ -162,12 +174,12 @@ function draw_frame(sel,gs,col)
 	)
 end
 
-function draw_dot(x,y,gs,col)
+function draw_dot(sel,gs,col)
 	rect(
-		x*gs+gs/2-1,
-		y*gs+gs/2-1,
-		x*gs+gs/2,
-		y*gs+gs/2,
+		sel.x*gs+gs/2-1,
+		sel.y*gs+gs/2-1,
+		sel.x*gs+gs/2,
+		sel.y*gs+gs/2,
 		col
 	)
 end
@@ -177,7 +189,7 @@ function _draw()
 	gridwidth=128/(pxsize+2)
 	for x=0,gridwidth do
 		for y=0,gridwidth do
-			draw_px(x,y)
+			draw_px(mksel(x,y))
 		end
 	end
 
@@ -199,12 +211,12 @@ function draw_palette()
 	local top=128/size-4
 	for r=0,3 do
 		for c=0,numhues-1 do
-			draw_codel(c,top+r-1,size,{val = r, hue = c})
+			draw_codel(mksel(c,top+r-1),size,{val = r, hue = c})
 		end
 	end
 	
-	local curhv = getpx(sel.x,sel.y)
-	draw_dot(curhv.hue,top+curhv.val-1,size,5)
+	local curhv = getpx(sel)
+	draw_dot(mksel(curhv.hue,top+curhv.val-1),size,5)
 end
 
 __gfx__
