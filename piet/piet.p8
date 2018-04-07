@@ -7,7 +7,11 @@ solidpat=0x0000
 midpat=0xa5a5
 pxsize=6
 gridsize=pxsize+2
-editing=0
+
+// 0 = not editing
+// 1 = changing selection
+// 2 = editing colors
+edit_mode=0
 
 numhues=6
 colormap={
@@ -57,9 +61,24 @@ function getcol(px)
 end
 
 function _update()
-	if(btnp(4)) editing=1-editing
+	if(btn(4)) then
+		if(edit_mode==2) then
+			-- Exit edit mode
+			edit_mode=-1
+		elseif(edit_mode==0) then
+			-- Enter edit mode
+			edit_mode=1
+		end
+	else
+		if(edit_mode==1) then
+			-- Just finished selection
+			edit_mode = 2
+		elseif(edit_mode==-1) then
+			edit_mode = 0
+		end
+	end
 
-	if(editing==1) then
+	if(edit_mode==2) then
 		local px = getpx(x,y)
 		
 		// handle moving from hues
@@ -144,13 +163,16 @@ function _draw()
 	end
 
 	draw_palette()
-			
+	
 	local framecolor=5
 	// yellow frame for editing
-	if(editing==1) framecolor=4
+	if(edit_mode > 0) framecolor=4
 	
 	// draw selection rectangle
 	draw_frame(x,y,gridsize,framecolor)
+
+	print("E:")
+	print(edit_mode)
 end
 
 function draw_palette()
