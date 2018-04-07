@@ -170,17 +170,17 @@ end
 
 function draw_dot(sel,gs,col)
 	rect(
-		sel.x*gs+gs/2-1,
-		sel.y*gs+gs/2-1,
-		sel.x*gs+gs/2,
-		sel.y*gs+gs/2,
+		sel.x*gs+flr(gs/2)-1,
+		sel.y*gs+flr(gs/2)-1,
+		sel.x*gs+flr(gs/2),
+		sel.y*gs+flr(gs/2),
 		col
 	)
 end
 
 function _draw()
 	cls()
-	gridwidth=128/(pxsize+2)
+	gridwidth=flr(128/(pxsize+2))
 	for x=0,gridwidth do
 		for y=0,gridwidth do
 			draw_px(mksel(x,y))
@@ -202,15 +202,15 @@ end
 
 function draw_palette()
 	local size=4
-	local top=128/size-4
+	local top=flr(128/size)-4
 	for r=0,3 do
 		for c=0,numhues-1 do
-			draw_codel(mksel(c,top+r-1),size,{val = r, hue = c})
+			draw_codel(mksel(c,top+r),size,{val = r, hue = c})
 		end
 	end
 	
 	local curhv = getpx(sel)
-	draw_dot(mksel(curhv.hue,top+curhv.val-1),size,5)
+	draw_dot(mksel(curhv.hue,top+curhv.val),size,5)
 end
 
 __gfx__
