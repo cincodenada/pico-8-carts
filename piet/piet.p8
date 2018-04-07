@@ -13,11 +13,35 @@ function mksel(x,y,...)
 	return sel
 end
 
+function save_image(mem_start,w,h)
+	for y=0,h-1 do
+		for x=0,w-1 do
+			px=y*w+x
+			poke(mem_start+px,mget(x,y))
+		end
+	end
+end
+
+function load_image(mem_start,w,h)
+	for y=0,h-1 do
+		for x=0,w-1 do
+			px=y*w+x
+			mset(x,y,peek(mem_start+px))
+		end
+	end
+end
+
 sel=mksel(0,0)
 solidpat=0x0000
 midpat=0xa5a5
 pxsize=6
 gridsize=pxsize+2
+save_start=0x5e00
+imw=16
+imh=16
+
+cartdata('cincodenada_piet')
+load_image(save_start, imw, imh)
 
 -- 0 = not editing
 -- 1 = changing selection
@@ -49,6 +73,7 @@ function setpx(sel,px)
 			mset(x,y,px.val + shl(px.hue,4))
 		end
 	end
+	save_image(save_start, imw, imh)
 end
 
 function getcol(px)
