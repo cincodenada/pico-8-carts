@@ -294,17 +294,28 @@ function draw_palette()
 	if(curhv.val==numvals-1) then
 		-- TODO
 	else
+		print(curhv.hue..curhv.val,8,26,5)
 		for x=-1,1 do
 			for y=-1,1 do
 				if (x==0 or y==0) then
-					cmp=mksel(sel.x+x,sel.y+y)
-					cmphv=getpx(cmp)
+					local cmp=mksel(sel.x+x,sel.y+y)
+					local cmphv=getpx(cmp)
 					if(cmphv.val==numvals-1) then
-						func="xxx"
+						if(cmphv.hue<numhues/2) then
+							func="pass"
+						else
+							func="stop"
+						end
 					else
-						diffh=(cmphv.hue-curhv.hue)%numhues
-						diffv=(cmphv.val-curhv.val)%numvals
-						func=funcmap[diffh*numvals+diffv]
+						local diffh=(cmphv.hue-curhv.hue)
+						if(diffh<0) diffh+=numhues
+						local diffv=(cmphv.val-curhv.val)
+						if(diffv<0) diffv+=numvals-1
+
+						print(cmphv.hue..cmphv.val,(x+1)*8,20+(y+1)*6,5)
+						print("",0,35,5)
+
+						func=funcmap[diffh*numvals+diffv+1]
 					end
 					if(x==0) then
 						posy=offy-6+(numvals*size+7)*(y+1)/2
