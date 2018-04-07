@@ -149,12 +149,15 @@ function draw_codel(x,y,gs,col)
 	fillp(solidpat)
 end
 
-function draw_frame(x,y,gs,col)
+function draw_frame(sel,gs,col)
+	local w, h = sel.w, sel.h
+	if(w>=0) w+=1
+	if(h>=0) h+=1
 	rect(
-		x*gs,
-		y*gs,
-		(x+1)*gs-1,
-		(y+1)*gs-1,
+		sel.x*gs,
+		sel.y*gs,
+		(sel.x+w)*gs-1,
+		(sel.y+h)*gs-1,
 		col
 	)
 end
@@ -185,12 +188,10 @@ function _draw()
 	if(edit_mode > 0) framecolor=4
 	
 	-- draw selection rectangle
-	draw_frame(sel.x,sel.y,gridsize,framecolor)
+	draw_frame(sel,gridsize,framecolor)
 
-	print(sel.x)
-	print(sel.y)
-	print("E:")
-	print(edit_mode)
+	print("sel:"..sel.w.."x"..sel.h.."+"..sel.x.."x"..sel.y)
+	print("E:"..edit_mode)
 end
 
 function draw_palette()
