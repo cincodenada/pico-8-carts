@@ -57,6 +57,9 @@ save_start=0x5e00
 imw=16
 imh=16
 
+paint_mode=0
+cur_color={val=3, hue=1}
+
 cartdata('cincodenada_piet')
 load_image(save_start, imw, imh)
 
@@ -134,6 +137,10 @@ end
 
 function _update()
 	--local prevsel={}
+	if(btnp(5)) then
+		paint_mode=1-paint_mode
+		cur_color=getpx(sel)
+	end
 	if(btn(4)) then
 		if(edit_mode==2) then
 			-- Exit edit mode
@@ -159,22 +166,31 @@ function _update()
 	end
 
 	if(edit_mode==2) then
-		local px = getpx(sel)
-		
-		-- handle moving from hues
-		-- to black/white and back
-		local hueinc=1
-		if(px.val==numvals-1) hueinc=numhues/2
-						
-		if(btnp(0)) px.hue-=hueinc
-		if(btnp(1)) px.hue+=hueinc
-		if(btnp(2)) px.val-=1
-		if(btnp(3)) px.val+=1
-		
-		px.val %= 4
-		px.hue %= 6
-		
-		setpx(sel,px)
+		if(paint_mode==0) then
+			local px = getpx(sel)
+			
+			-- handle moving from hues
+			-- to black/white and back
+			local hueinc=1
+			if(px.val==numvals-1) hueinc=numhues/2
+							
+			if(btnp(0)) px.hue-=hueinc
+			if(btnp(1)) px.hue+=hueinc
+			if(btnp(2)) px.val-=1
+			if(btnp(3)) px.val+=1
+			
+			px.val %= 4
+			px.hue %= 6
+			
+			setpx(sel,px)
+		else
+			if(btnp(0)) sel.x-=1
+			if(btnp(1)) sel.x+=1
+			if(btnp(2)) sel.y-=1
+			if(btnp(3)) sel.y+=1
+
+			setpx(sel,cur_color)
+		end
 	elseif (edit_mode==1) then
 		if(btnp(0)) sel.w-=1
 		if(btnp(1)) sel.w+=1
@@ -200,8 +216,15 @@ function _update()
 	if(sel.y+sel.h>imh-1) then sel.y=imh-sel.h-1 end
 end
 
-function draw_px(sel)
-	draw_codel(sel,gridsize,getpx(sel),0,0)
+function draw_px(sel,...)
+	local args = {...}
+	if(#args > 0) then
+		col=args[1]
+	else
+		col=getpx(sel)
+	end
+
+	draw_codel(sel,gridsize,col,0,0)
 end
 
 function draw_codel(sel,gs,col,offx,offy)
@@ -253,6 +276,9 @@ function _draw()
 			draw_px(mksel(x,y))
 		end
 	end
+	if(paint_mode==1) then
+		draw_px(sel,cur_color)
+	end
 
 	draw_palette()
 	
@@ -277,12 +303,14 @@ function draw_palette()
 	-- plus 1px padding/side
 	local tot_h=numvals*size+2*6+2
 
+	local bgcolor=5
+	if(paint_mode > 0) bgcolor=4
 	rectfill(
 		128/2-tot_w/2,
 		128-tot_h,
 		128/2+tot_w/2-1,
 		127,
-		5
+		bgcolor
 	)
 		
 	local offx=128/2-(numhues*size/2)
