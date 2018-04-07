@@ -263,9 +263,9 @@ function _draw()
 	-- draw selection rectangle
 	draw_frame(sel,gridsize,framecolor)
 
-	print("sel:"..sel.w.."x"..sel.h.."+"..sel.x.."x"..sel.y)
-	print("prevsel:"..prevsel.w.."x"..prevsel.h.."+"..prevsel.x.."x"..prevsel.y)
-	print("E:"..edit_mode)
+	--print("sel:"..sel.w.."x"..sel.h.."+"..sel.x.."x"..sel.y)
+	--print("prevsel:"..prevsel.w.."x"..prevsel.h.."+"..prevsel.x.."x"..prevsel.y)
+	--print("E:"..edit_mode)
 end
 
 function draw_palette()
@@ -299,7 +299,7 @@ function draw_palette()
 	if(curhv.val==numvals-1) then
 		-- TODO
 	else
-		print(curhv.hue..curhv.val,8,26,5)
+		--print(curhv.hue..curhv.val,8,26,5)
 		for x=-1,1 do
 			for y=-1,1 do
 				if (abs(x+y)==1) then
@@ -318,7 +318,7 @@ function draw_palette()
 						local diffv=(cmphv.val-curhv.val)
 						if(diffv<0) diffv+=numvals-1
 
-						print(cmphv.hue..cmphv.val,(x+1)*8,20+(y+1)*6,5)
+						--print(cmphv.hue..cmphv.val,(x+1)*8,20+(y+1)*6,5)
 
 						func=funcmap[diffh*(numvals-1)+diffv+1]
 					end
