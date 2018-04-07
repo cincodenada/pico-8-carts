@@ -66,9 +66,19 @@ load_image(save_start, imw, imh)
 edit_mode=0
 
 numhues=6
+numvals=4
 colormap={
 	15,10,11,12,6,14,
 	8,9,3,1,13,2
+}
+
+funcmap={
+	'n/a','push','pop',
+	'add','sub','mul',
+	'div','mod','not',
+	'gt','ptr','sw',
+	'dup','roll','in_n',
+	'in_c','out_n','out_c'
 }
 
 function getpx(sel)
@@ -94,10 +104,10 @@ function setpx(sel,px)
 end
 
 function getcol(px)
-	if(px.val==3) then
+	if(px.val==numvals-1) then
 		-- easy, 0/1 to either
 		-- white (7) or black(0)
-		return 7*(1-band(px.hue/3,0x01))
+		return 7*(1-band(px.hue/(numhues/2),0x01))
 	else
 		-- proper colors
 		-- print("getcolor")
@@ -149,7 +159,7 @@ function _update()
 		-- handle moving from hues
 		-- to black/white and back
 		local hueinc=1
-		if(px.val==3) hueinc=3
+		if(px.val==numvals-1) hueinc=numhues/2
 						
 		if(btnp(0)) px.hue-=hueinc
 		if(btnp(1)) px.hue+=hueinc
@@ -181,16 +191,15 @@ function _update()
 		if(sel.y<0) sel.y=0
 	end
 	
-	
 	if(sel.x+sel.w>imw-1) then sel.x=imw-sel.w-1 end
 	if(sel.y+sel.h>imh-1) then sel.y=imh-sel.h-1 end
 end
 
 function draw_px(sel)
-	draw_codel(sel,gridsize,getpx(sel))
+	draw_codel(sel,gridsize,getpx(sel),0,0)
 end
 
-function draw_codel(sel,gs,col)
+function draw_codel(sel,gs,col,offx,offy)
 	if(col.val==1) then
 		-- middle row
 		fillp(midpat)
@@ -199,10 +208,10 @@ function draw_codel(sel,gs,col)
 	end
 	
 	rectfill(
-		sel.x*gs,
-		sel.y*gs,
-		(sel.x+1)*gs-1,
-		(sel.y+1)*gs-1,
+		sel.x*gs+offx,
+		sel.y*gs+offy,
+		(sel.x+1)*gs-1+offx,
+		(sel.y+1)*gs-1+offy,
 		getcol(col)
 	)
 
@@ -221,12 +230,12 @@ function draw_frame(sel,gs,col)
 	)
 end
 
-function draw_dot(sel,gs,col)
+function draw_dot(sel,gs,col,offx,offy)
 	rect(
-		sel.x*gs+flr(gs/2)-1,
-		sel.y*gs+flr(gs/2)-1,
-		sel.x*gs+flr(gs/2),
-		sel.y*gs+flr(gs/2),
+		sel.x*gs+flr(gs/2)-1+offx,
+		sel.y*gs+flr(gs/2)-1+offy,
+		sel.x*gs+flr(gs/2)+offx,
+		sel.y*gs+flr(gs/2)+offy,
 		col
 	)
 end
@@ -256,15 +265,57 @@ end
 
 function draw_palette()
 	local size=4
-	local top=flr(128/size)-4
-	for r=0,3 do
+	-- 1 char on each side
+	-- plus 1px padding+1 border/side
+	local tot_w=numhues*size+2*4+2*2
+	-- one line top/bottom
+	-- plus 1px padding/side + 1 border top
+	local tot_h=numvals*size+2*6+3
+
+	rectfill(
+		128/2-tot_w/2,
+		128-tot_h,
+		128/2+tot_w/2,
+		128,
+		5
+	)
+		
+	local offx=128/2-(numhues*size/2)
+	local offy=128-(numvals*size+7)
+	for r=0,numvals-1 do
 		for c=0,numhues-1 do
-			draw_codel(mksel(c,top+r),size,{val = r, hue = c})
+			draw_codel(mksel(c,r),size,{val = r, hue = c},offx,offy)
 		end
 	end
 	
 	local curhv = getpx(sel)
-	draw_dot(mksel(curhv.hue,top+curhv.val),size,5)
+	draw_dot(mksel(curhv.hue,curhv.val),size,5,offx,offy)
+
+	if(curhv.val==numvals-1) then
+		-- TODO
+	else
+		for x=-1,1 do
+			for y=-1,1 do
+				if (x==0 or y==0) then
+					cmp=mksel(sel.x+x,sel.y+y)
+					cmphv=getpx(cmp)
+					if(cmphv.val==numvals-1) then
+						func="xxx"
+					else
+						diffh=(cmphv.hue-curhv.hue)%numhues
+						diffv=(cmphv.val-curhv.val)%numvals
+						func=funcmap[diffh*numvals+diffv]
+					end
+					if(x==0) then
+						posy=offy-6+(numvals*size+7)*(y+1)/2
+						posx=128/2-4*2
+						print(func,posx,posy,7)
+					end
+				end
+			end
+		end
+	end
+	print("",0,0)
 end
 
 __gfx__
