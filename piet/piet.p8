@@ -77,17 +77,17 @@ funcmap={
 	'add','sub','mul',
 	'div','mod','not',
 	'gt','ptr','sw',
-	'dup','roll','in.n',
-	'in.c','out.n','out.c'
+	'dup','roll','#in',
+	'cin','#out','cout'
 }
 
-function getpx(sel)
-	if(sel.x < 0 or sel.x >= imw or
-	   sel.y < 0 or sel.y >= imh) then
+function getpx(px)
+	if(px.x < 0 or px.x >= imw or
+	   px.y < 0 or px.y >= imh) then
 		-- edges are treated as black
 		return {val=3,hue=4}
 	end
-	local curval = mget(sel.x,sel.y)
+	local curval = mget(px.x,px.y)
 	
 	-- print("getpx")
 	-- print(curval)
@@ -305,6 +305,7 @@ function draw_palette()
 				if (abs(x+y)==1) then
 					local cmp=mksel(sel.x+x,sel.y+y)
 					local cmphv=getpx(cmp)
+					local func="????"
 					if(cmphv.val==numvals-1) then
 						if(cmphv.hue<numhues/2) then
 							func="pass"
@@ -319,7 +320,7 @@ function draw_palette()
 
 						print(cmphv.hue..cmphv.val,(x+1)*8,20+(y+1)*6,5)
 
-						func=funcmap[diffh*numvals+diffv+1]
+						func=funcmap[diffh*(numvals-1)+diffv+1]
 					end
 					if(x==0) then
 						posy=offy-6+(numvals*size+7)*(y+1)/2
