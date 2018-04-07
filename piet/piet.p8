@@ -2,7 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
 -- vim: sw=2 ts=2 sts=2 noet
--- w/h: 0 = 1 cel selected
+-- w/h: 0x0 = 1 cel
 function mksel(x,y,...)
 	local sel={x=x,y=y,w=0,h=0}
 	local args = {...}
@@ -11,14 +11,6 @@ function mksel(x,y,...)
 		sel.h = arg[2]
 	end
 	return sel
-end
-
-function sgn(n)
-	if(n<0) then
-		return -1
-	else
-		return 1
-	end
 end
 
 sel=mksel(0,0)
@@ -52,8 +44,8 @@ function getpx(sel)
 end
 
 function setpx(sel,px)
-	for x=sel.x,sel.x+sel.w,sgn(sel.w) do
-		for y=sel.y,sel.y+sel.h,sgn(sel.h) do
+	for x=sel.x,sel.x+sel.w do
+		for y=sel.y,sel.y+sel.h do
 			mset(x,y,px.val + shl(px.hue,4))
 		end
 	end
@@ -123,18 +115,22 @@ function _update()
 		if(btnp(1)) sel.w+=1
 		if(btnp(2)) sel.h-=1
 		if(btnp(3)) sel.h+=1
+
+		if(sel.w<0) sel.w=0
+		if(sel.h<0) sel.h=0
 	elseif (edit_mode==0) then
 		if(btnp(0)) sel.x-=1
 		if(btnp(1)) sel.x+=1
 		if(btnp(2)) sel.y-=1
 		if(btnp(3)) sel.y+=1
+
+		if(sel.x<0) sel.x=0
+		if(sel.y<0) sel.y=0
 	end
 	
-	if(sel.x<0) sel.x=0
-	if(sel.y<0) sel.y=0
 	
-	if(sel.x>127) then sel.x=127 end
-	if(sel.y>63) then sel.y=63 end
+	if(sel.x+sel.w>127) then sel.x=127-sel.w end
+	if(sel.y+sel.h>63) then sel.y=63-sel.h end
 end
 
 function draw_px(sel)
@@ -162,9 +158,7 @@ function draw_codel(sel,gs,col)
 end
 
 function draw_frame(sel,gs,col)
-	local w, h = sel.w, sel.h
-	if(w>=0) w+=1
-	if(h>=0) h+=1
+	local w, h = sel.w+1, sel.h+1
 	rect(
 		sel.x*gs,
 		sel.y*gs,
