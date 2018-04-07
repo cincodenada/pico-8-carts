@@ -2,8 +2,18 @@ pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
 -- vim: sw=2 ts=2 sts=2 noet
-x=0
-y=0
+-- w/h: 0 = 1 cel selected
+function mksel(x,y,...)
+	local sel={x=x,y=y,w=0,h=0}
+	local args = {...}
+	if (#args > 0)	then
+		sel.w = arg[1]
+		sel.h = arg[2]
+	end
+	return sel
+end
+
+sel=mksel(0,0)
 solidpat=0x0000
 midpat=0xa5a5
 pxsize=6
@@ -80,7 +90,7 @@ function _update()
 	end
 
 	if(edit_mode==2) then
-		local px = getpx(x,y)
+		local px = getpx(sel.x,sel.y)
 		
 		-- handle moving from hues
 		-- to black/white and back
@@ -95,19 +105,24 @@ function _update()
 		px.val %= 4
 		px.hue %= 6
 		
-		setpx(x,y,px)
-	else
-		if(btnp(0)) x-=1
-		if(btnp(1)) x+=1
-		if(btnp(2)) y-=1
-		if(btnp(3)) y+=1
+		setpx(sel.x,sel.y,px)
+	elseif (edit_mode==1) then
+		if(btnp(0)) sel.w-=1
+		if(btnp(1)) sel.w+=1
+		if(btnp(2)) sel.h-=1
+		if(btnp(3)) sel.h+=1
+	elseif (edit_mode==0) then
+		if(btnp(0)) sel.x-=1
+		if(btnp(1)) sel.x+=1
+		if(btnp(2)) sel.y-=1
+		if(btnp(3)) sel.y+=1
 	end
 	
-	if(x<0) x=0
-	if(y<0) y=0
+	if(sel.x<0) sel.x=0
+	if(sel.y<0) sel.y=0
 	
-	if(x>127) then x=127 end
-	if(y>63) then y=63 end
+	if(sel.x>127) then sel.x=127 end
+	if(sel.y>63) then sel.y=63 end
 end
 
 function draw_px(x,y)
@@ -170,8 +185,10 @@ function _draw()
 	if(edit_mode > 0) framecolor=4
 	
 	-- draw selection rectangle
-	draw_frame(x,y,gridsize,framecolor)
+	draw_frame(sel.x,sel.y,gridsize,framecolor)
 
+	print(sel.x)
+	print(sel.y)
 	print("E:")
 	print(edit_mode)
 end
@@ -179,13 +196,13 @@ end
 function draw_palette()
 	local size=4
 	local top=128/size-4
-	for y=0,3 do
-		for x=0,numhues-1 do
-			draw_codel(x,top+y-1,size,{val = y, hue = x})
+	for r=0,3 do
+		for c=0,numhues-1 do
+			draw_codel(c,top+r-1,size,{val = r, hue = c})
 		end
 	end
 	
-	local curhv = getpx(x,y)
+	local curhv = getpx(sel.x,sel.y)
 	draw_dot(curhv.hue,top+curhv.val-1,size,5)
 end
 
