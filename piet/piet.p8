@@ -13,6 +13,22 @@ function mksel(x,y,...)
 	return sel
 end
 
+function tcopy(table)
+	local out={}
+	for k,v in pairs(table) do
+		out[k] = v
+	end
+	return out
+end
+
+function teq(a,b)
+	if(#a != #b) return false
+	for k,v in pairs(a) do
+		if(a[k] != b[k]) return false
+	end
+	return true
+end
+
 function save_image(mem_start,w,h)
 	for y=0,h-1 do
 		for x=0,w-1 do
@@ -32,6 +48,7 @@ function load_image(mem_start,w,h)
 end
 
 sel=mksel(0,0)
+prevsel=tcopy(sel)
 solidpat=0x0000
 midpat=0xa5a5
 pxsize=6
@@ -101,18 +118,26 @@ function getcol(px)
 end
 
 function _update()
+	--local prevsel={}
 	if(btn(4)) then
 		if(edit_mode==2) then
 			-- Exit edit mode
 			edit_mode=-1
 		elseif(edit_mode==0) then
-			-- Enter edit mode
+			-- Enter selection edit mode
+			prevsel=tcopy(sel)
 			edit_mode=1
 		end
 	else
 		if(edit_mode==1) then
 			-- Just finished selection
-			edit_mode = 2
+			if(teq(sel,prevsel)) then
+				-- If we didn't change size, edit
+				edit_mode = 2
+			else
+				-- Otherwise, back to normal
+				edit_mode = 0
+			end
 		elseif(edit_mode==-1) then
 			edit_mode = 0
 		end
@@ -143,6 +168,9 @@ function _update()
 
 		if(sel.w<0) sel.w=0
 		if(sel.h<0) sel.h=0
+
+		if(sel.w>imw-1) sel.w=imw-1
+		if(sel.h>imh-1) sel.h=imh-1
 	elseif (edit_mode==0) then
 		if(btnp(0)) sel.x-=1
 		if(btnp(1)) sel.x+=1
@@ -216,12 +244,13 @@ function _draw()
 	
 	local framecolor=5
 	-- yellow frame for editing
-	if(edit_mode > 0) framecolor=4
+	if(edit_mode > 1) framecolor=4
 	
 	-- draw selection rectangle
 	draw_frame(sel,gridsize,framecolor)
 
 	print("sel:"..sel.w.."x"..sel.h.."+"..sel.x.."x"..sel.y)
+	print("prevsel:"..prevsel.w.."x"..prevsel.h.."+"..prevsel.x.."x"..prevsel.y)
 	print("E:"..edit_mode)
 end
 
