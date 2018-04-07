@@ -266,17 +266,17 @@ end
 function draw_palette()
 	local size=4
 	-- 1 char on each side
-	-- plus 1px padding+1 border/side
-	local tot_w=numhues*size+2*4+2*2
+	-- plus 1px padding/side
+	local tot_w=numhues*size+2*4+2
 	-- one line top/bottom
-	-- plus 1px padding/side + 1 border top
-	local tot_h=numvals*size+2*6+3
+	-- plus 1px padding/side
+	local tot_h=numvals*size+2*6+2
 
 	rectfill(
 		128/2-tot_w/2,
 		128-tot_h,
-		128/2+tot_w/2,
-		128,
+		128/2+tot_w/2-1,
+		127,
 		5
 	)
 		
@@ -297,7 +297,7 @@ function draw_palette()
 		print(curhv.hue..curhv.val,8,26,5)
 		for x=-1,1 do
 			for y=-1,1 do
-				if (x==0 or y==0) then
+				if (x!=0 or y!=0) then
 					local cmp=mksel(sel.x+x,sel.y+y)
 					local cmphv=getpx(cmp)
 					if(cmphv.val==numvals-1) then
@@ -313,7 +313,6 @@ function draw_palette()
 						if(diffv<0) diffv+=numvals-1
 
 						print(cmphv.hue..cmphv.val,(x+1)*8,20+(y+1)*6,5)
-						print("",0,35,5)
 
 						func=funcmap[diffh*numvals+diffv+1]
 					end
@@ -321,6 +320,12 @@ function draw_palette()
 						posy=offy-6+(numvals*size+7)*(y+1)/2
 						posx=128/2-4*2
 						print(func,posx,posy,7)
+					else
+						posy=offy
+						posx=offx-4+(numhues*size+5)*(x+1)/2
+						for c=0,3 do
+							print(sub(func,c+1,1),posx,posy+c*6,7)
+						end
 					end
 				end
 			end
