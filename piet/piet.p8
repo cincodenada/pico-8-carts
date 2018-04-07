@@ -77,8 +77,8 @@ funcmap={
 	'add','sub','mul',
 	'div','mod','not',
 	'gt','ptr','sw',
-	'dup','roll','in_n',
-	'in_c','out_n','out_c'
+	'dup','roll','in.n',
+	'in.c','out.n','out.c'
 }
 
 function getpx(sel)
@@ -297,7 +297,7 @@ function draw_palette()
 		print(curhv.hue..curhv.val,8,26,5)
 		for x=-1,1 do
 			for y=-1,1 do
-				if (x!=0 or y!=0) then
+				if (abs(x+y)==1) then
 					local cmp=mksel(sel.x+x,sel.y+y)
 					local cmphv=getpx(cmp)
 					if(cmphv.val==numvals-1) then
@@ -321,10 +321,10 @@ function draw_palette()
 						posx=128/2-4*2
 						print(func,posx,posy,7)
 					else
-						posy=offy
+						posy=offy-3
 						posx=offx-4+(numhues*size+5)*(x+1)/2
 						for c=0,3 do
-							print(sub(func,c+1,1),posx,posy+c*6,7)
+							print(sub(func,c+1,c+1),posx,posy+c*6,7)
 						end
 					end
 				end
