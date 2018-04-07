@@ -8,9 +8,9 @@ midpat=0xa5a5
 pxsize=6
 gridsize=pxsize+2
 
-// 0 = not editing
-// 1 = changing selection
-// 2 = editing colors
+-- 0 = not editing
+-- 1 = changing selection
+-- 2 = editing colors
 edit_mode=0
 
 numhues=6
@@ -22,12 +22,12 @@ colormap={
 function getpx(x,y)
 	local curval = mget(x,y)
 	
-	//print("getpx")
-	//print(curval)
+	-- print("getpx")
+	-- print(curval)
 	local row = band(curval,0x0f)
 	local col = lshr(band(curval,0xf0),4)
-	//print(row)
-	//print(col)
+	-- print(row)
+	-- print(col)
 
 	return {val = row, hue = col}
 end
@@ -38,22 +38,22 @@ end
 
 function getcol(px)
 	if(px.val==3) then
-		// easy, 0/1 to either
-		// white (7) or black(0)
+		-- easy, 0/1 to either
+		-- white (7) or black(0)
 		return 7*(1-band(px.hue/3,0x01))
 	else
-		// proper colors
-		//print("getcolor")
-		// rows to get fg/bg colors
+		-- proper colors
+		-- print("getcolor")
+		-- rows to get fg/bg colors
 		local rowa = band(lshr(px.val,1),0xf)
 		local rowb = band(lshr(px.val+1,1),0xf)
 		
-		//print(px.hue)
-		//print(px.val)
-		//print(rowa)
-		//print(rowb)
+		-- print(px.hue)
+		-- print(px.val)
+		-- print(rowa)
+		-- print(rowb)
 		
-		// get colors from map
+		-- get colors from map
 		local cola = colormap[rowa*numhues+px.hue+1]
 		local colb = colormap[rowb*numhues+px.hue+1]
 		return cola + shl(colb, 4)
@@ -81,8 +81,8 @@ function _update()
 	if(edit_mode==2) then
 		local px = getpx(x,y)
 		
-		// handle moving from hues
-		// to black/white and back
+		-- handle moving from hues
+		-- to black/white and back
 		local hueinc=1
 		if(px.val==3) hueinc=3
 						
@@ -115,7 +115,7 @@ end
 
 function draw_codel(x,y,gs,col)
 	if(col.val==1) then
-		// middle row
+		-- middle row
 		fillp(midpat)
 	else
 		fillp(solidpat)
@@ -129,7 +129,7 @@ function draw_codel(x,y,gs,col)
 		getcol(col)
 	)
 
-	// reset fillpat
+	-- reset fillpat
 	fillp(solidpat)
 end
 
@@ -165,10 +165,10 @@ function _draw()
 	draw_palette()
 	
 	local framecolor=5
-	// yellow frame for editing
+	-- yellow frame for editing
 	if(edit_mode > 0) framecolor=4
 	
-	// draw selection rectangle
+	-- draw selection rectangle
 	draw_frame(x,y,gridsize,framecolor)
 
 	print("E:")
