@@ -154,8 +154,8 @@ function _update()
 	end
 	
 	
-	if(sel.x+sel.w>127) then sel.x=127-sel.w end
-	if(sel.y+sel.h>63) then sel.y=63-sel.h end
+	if(sel.x+sel.w>imw-1) then sel.x=imw-sel.w-1 end
+	if(sel.y+sel.h>imh-1) then sel.y=imh-sel.h-1 end
 end
 
 function draw_px(sel)
