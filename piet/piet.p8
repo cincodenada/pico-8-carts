@@ -1,6 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
+-- vim: sw=2 ts=2 sts=2 noet
 x=0
 y=0
 solidpat=0x0000
