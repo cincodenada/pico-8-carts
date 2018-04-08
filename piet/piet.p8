@@ -9,8 +9,8 @@ function packhv(hv) return hv.val+shl(hv.hue,4) end
 numhues=6
 numvals=4
 colormap={
-	15,10,11,12,6,14,
-	8,9,3,1,13,2
+	15,10,11,6,12,14,
+	8,9,3,13,1,2
 }
 
 funcmap={
