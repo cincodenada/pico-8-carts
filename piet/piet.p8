@@ -114,8 +114,8 @@ function getcol(px)
 		-- proper colors
 		-- print("getcolor")
 		-- rows to get fg/bg colors
-		local rowa = band(lshr(px.val,1),0xf)
-		local rowb = band(lshr(px.val+1,1),0xf)
+		local rowa = flr(px.val/2)
+		local rowb = flr((px.val+1)/2)
 		
 		-- print(px.hue)
 		-- print(px.val)
