@@ -472,9 +472,17 @@ function step()
 	elseif(op == "add") then
 		local top = stack:pop()
 		stack[#stack] += top
+	elseif(op == "sub") then
+		local top = stack:pop()
+		stack[#stack] -= top
 	elseif(op == "mul") then
 		local top = stack:pop()
 		stack[#stack] *= top
+	elseif(op == "div") then
+		local top = stack:pop()
+		if(top>0) then
+			stack[#stack] = flr(stack[#stack]/top)
+		end
 	elseif(op == "cout") then
 		output = output..chr(stack[#stack])
 		stack[#stack] = nil
@@ -512,7 +520,7 @@ end
 
 function get_func(from, to)
 	local func="????"
-	if(to.val==numvals-1) then
+	if(to.val==numvals-1 or from.val==numvals-1) then
 		if(to.hue<numhues/2) then
 			func="pass"
 		else
