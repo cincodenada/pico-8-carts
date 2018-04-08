@@ -382,17 +382,21 @@ function draw_palette()
 	if(edit_mode == 3) then
 		print(output, 0, top)
 		charwidth = flr(((128-tot_w)/2-1)/4)
-		local line = ""
-		print("", 128/2+tot_w/2+1, top)
+		local left=128/2+tot_w/2+1
 		local sp = #stack
-		for r=1,5 do
-			for c=1,charwidth do
+		for r=0,4 do
+			x = left
+			while true do
 				if(sp==0) break
-				line = line..stack[sp]
-				sp-=1
+				local numlen = #tostr(stack[sp])
+				if(x+numlen*4 < 128) then
+					print(stack[sp], x, top+r*6)
+					x += numlen*4 + 2
+					sp-=1
+				else
+					break
+				end
 			end
-			print(line)
-			line=""
 			if(sp==0) break
 		end
 	end
@@ -414,37 +418,62 @@ function chr(num)
 	end
 end
 
-function next(state)
-	local next = tcopy(state)
-	if(state.dp % 2==0) then
-		next.x += 1-state.dp
+function state:next()
+	local next = tcopy(self)
+	if(self.dp % 2==0) then
+		next.x += 1-self.dp
 	else
-		next.y += 2-state.dp
+		next.y += 2-self.dp
 	end
 	return next
+end
+
+function stack:pop()
+	local top = self[#self]
+	self[#self] = nil
+	return top
+end
+
+function stack:push(val)
+	self[#self+1] = val
+end
+
+function stack:roll(depth, dir)
+	local tmp
+	if(dir == -1) then
+		tmp = self[#self-depth]
+		for i=#self-depth,#self-1 do
+			self[i] = self[i+1]
+		end
+		self[#self] = tmp
+	else
+		tmp = self[#self]
+		for i=#self,#self-depth+1,-1 do
+			self[i] = self[i-1]
+		end
+		self[#self-depth] = tmp
+	end
 end
 
 ---
 -->8
 function step()
-	local future = next(state)
+	local future = state:next()
 
 	from = getpx(state)
 	to = getpx(future)
 	op = get_func(from, to)
 	if(op == "push") then
-		stack[#stack+1] = get_val(from)
+		stack:push(get_val(from))
 	elseif(op == "pop") then
-		stack[#stack] = nil
+		stack:pop()
 	elseif(op == "dup") then
 		stack[#stack+1] = stack[#stack]
 	elseif(op == "add") then
-		top = stack[#stack]
-		stack[#stack] = nil
+		local top = stack:pop()
 		stack[#stack] += top
 	elseif(op == "mul") then
-		top = stack[#stack]
-		stack[#stack] = nil
+		local top = stack:pop()
 		stack[#stack] *= top
 	elseif(op == "cout") then
 		output = output..chr(stack[#stack])
@@ -457,10 +486,23 @@ function step()
 		else
 			future.dp = (future.dp+1)%4
 		end
+	elseif(op == "roll") then
+		local rolls = stack:pop()
+		-- Easier on my brain to work with depth-1
+		local depth = stack:pop()-1
+		if(depth > 0 and depth <= #stack) then
+			if(rolls < 0) then
+				local dir = -1
+				rolls = -rolls
+			end
+			for n=1,rolls do
+				stack:roll(depth, dir)
+			end
+		end
 	end
 
-	sel = mksel(state.x, state.y)
 	state = future
+	sel = mksel(state.x, state.y)
 end
 
 function get_val(px)
