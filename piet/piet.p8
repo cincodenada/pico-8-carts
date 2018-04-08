@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
--- vim: sw=2 ts=2 sts=2 noet
+-- vim: sw=2 ts=2 sts=2 noet foldmethod=marker foldmarker=-->8,---
 -- w/h: 0x0 = 1 cel
 function hex(n,d) return sub(tostr(n,true),5,6) end
 function packhv(hv) return hv.val+shl(hv.hue,4) end
@@ -23,9 +23,11 @@ funcmap={
 	'cin','#out','cout'
 }
 
+---
 -->8
--- generate pixel value lookup table
-pxvals = {}
+-- generate pico-8 color <-> hv lookup tables
+col2hv = {}
+hv2col = {}
 for curhue=1,numhues do
 	local colors = {
 		colormap[curhue] + shl(colormap[curhue],4),
@@ -33,13 +35,20 @@ for curhue=1,numhues do
 		colormap[curhue+numhues] + shl(colormap[curhue],4),
 		colormap[curhue+numhues] + shl(colormap[curhue+numhues],4)
 	}
-	pxvals[colors[1]] = {hue=curhue-1,val=0}
-	pxvals[colors[2]] = {hue=curhue-1,val=1}
-	pxvals[colors[3]] = {hue=curhue-1,val=1}
-	pxvals[colors[4]] = {hue=curhue-1,val=2}
+	col2hv[colors[1]] = {hue=curhue-1,val=0}
+	col2hv[colors[2]] = {hue=curhue-1,val=1}
+	col2hv[colors[3]] = {hue=curhue-1,val=1}
+	col2hv[colors[4]] = {hue=curhue-1,val=2}
+	
+	hv2col[curhue-1] = {}
+	hv2col[curhue-1][0] = colors[1]
+	hv2col[curhue-1][1] = colors[2]
+	hv2col[curhue-1][2] = colors[4]
+	-- Add black/white
+	hv2col[curhue-1][3] = 7*(1-band(curhue/(numhues/2),0x01))
 end
-pxvals[0x00] = {hue=3,val=3} -- black
-pxvals[0x77] = {hue=0,val=3} -- white
+col2hv[0x00] = {hue=3,val=3} -- black
+col2hv[0x77] = {hue=0,val=3} -- white
 
 function mksel(x,y,...)
 	local sel={x=x,y=y,w=0,h=0}
@@ -72,7 +81,7 @@ function load_image(mem_start,w,h,gs,memwidth)
 		for x=0,w-1 do
 			px=y*gs*memwidth/2+x*gs/2
 			curval = peek(mem_start+px)
-			mset(x,y,packhv(pxvals[curval]))
+			mset(x,y,packhv(col2hv[curval]))
 		end
 	end
 end
@@ -105,30 +114,13 @@ function setpx(sel,px)
 	save_image(save_start, imw, imh)
 end
 
+-- Translates a h/v pair to a fill color
+-- With upper/lower nibble set properly
 function getcol(px)
-	if(px.val==numvals-1) then
-		-- easy, 0/1 to either
-		-- white (7) or black(0)
-		return 7*(1-band(px.hue/(numhues/2),0x01))
-	else
-		-- proper colors
-		-- print("getcolor")
-		-- rows to get fg/bg colors
-		local rowa = flr(px.val/2)
-		local rowb = flr((px.val+1)/2)
-		
-		-- print(px.hue)
-		-- print(px.val)
-		-- print(rowa)
-		-- print(rowb)
-		
-		-- get colors from map
-		local cola = colormap[rowa*numhues+px.hue+1]
-		local colb = colormap[rowb*numhues+px.hue+1]
-		return cola + shl(colb, 4)
-	end
+	return hv2col[px.hue][px.val]
 end
 
+---
 -->8
 sel=mksel(0,0)
 prevsel=tcopy(sel)
@@ -260,6 +252,7 @@ function _draw()
 	--print("e:"..edit_mode)
 end
 
+---
 -->8
 function draw_px(sel,...)
 	local args = {...}
