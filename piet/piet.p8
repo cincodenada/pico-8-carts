@@ -136,7 +136,7 @@ paint_mode=0
 cur_color={val=3, hue=1}
 
 -- Running variables
-local ptr = {x=0, y=0, dir=0}
+local state = {x=0, y=0, dp=0, cc=0, toggle=0}
 local stack = {}
 local output = ""
 
@@ -414,12 +414,12 @@ function chr(num)
 	end
 end
 
-function next(ptr)
-	local next = tcopy(ptr)
-	if(ptr.dir % 2==0) then
-		next.x += 1-ptr.dir
+function next(state)
+	local next = tcopy(state)
+	if(state.dp % 2==0) then
+		next.x += 1-state.dp
 	else
-		next.y += 2-ptr.dir
+		next.y += 2-state.dp
 	end
 	return next
 end
@@ -427,10 +427,10 @@ end
 ---
 -->8
 function step()
-	nextp = next(ptr)
+	local future = next(state)
 
-	from = getpx(ptr)
-	to = getpx(nextp)
+	from = getpx(state)
+	to = getpx(future)
 	op = get_func(from, to)
 	if(op == "push") then
 		stack[#stack+1] = get_val(from)
@@ -449,10 +449,18 @@ function step()
 	elseif(op == "cout") then
 		output = output..chr(stack[#stack])
 		stack[#stack] = nil
+	elseif(op == "stop") then
+		future.x = state.x
+		future.y = state.y
+		if(toggle==0) then
+			future.cc = 1-future.cc
+		else
+			future.dp = (future.dp+1)%4
+		end
 	end
 
-	ptr = nextp
-	sel = mksel(ptr.x, ptr.y)
+	sel = mksel(state.x, state.y)
+	state = future
 end
 
 function get_val(px)
