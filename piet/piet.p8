@@ -339,18 +339,24 @@ function draw_palette()
 	-- plus 1px padding/side
 	local tot_h=numvals*size+2*6+2
 
+	if (sel.y > 128/gridsize/2) then
+		top = 0
+	else
+		top = 128-tot_h
+	end
+
 	local bgcolor=5
 	if(paint_mode > 0) bgcolor=4
 	rectfill(
 		128/2-tot_w/2,
-		128-tot_h,
+		top,
 		128/2+tot_w/2-1,
-		127,
+		top+tot_h,
 		bgcolor
 	)
 		
 	local offx=128/2-(numhues*size/2)
-	local offy=128-(numvals*size+7)
+	local offy=top + 7
 	for r=0,numvals-1 do
 		for c=0,numhues-1 do
 			draw_codel(mksel(c,r),size,{val = r, hue = c},offx,offy)
