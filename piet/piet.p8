@@ -135,7 +135,12 @@ imh=14
 paint_mode=0
 cur_color={val=3, hue=1}
 
-menuitem(1, "run program", function() run() end)
+-- Running variables
+local ptr = {x=0, y=0, dir=0}
+local stack = {}
+local output = ""
+
+menuitem(1, "run program", function() edit_mode=3 end)
 
 cartdata('cincodenada_piet')
 load_image(save_start, imw, imh, 6, 128)
@@ -143,10 +148,20 @@ load_image(save_start, imw, imh, 6, 128)
 -- 0 = not editing
 -- 1 = changing selection
 -- 2 = editing colors
+-- 3 = running
 edit_mode=0
 
 function _update()
 	--local prevsel={}
+	if(edit_mode == 3) then
+		if(btnp(4)) then
+			step()
+		elseif(btnp(5)) then
+			edit_mode=0
+		end
+		return
+	end
+
 	if(btnp(5)) then
 		paint_mode=1-paint_mode
 		cur_color=getpx(sel)
@@ -246,10 +261,6 @@ function _draw()
 	
 	-- draw selection rectangle
 	draw_frame(sel,gridsize,framecolor)
-
-	--print("sel:"..sel.w.."x"..sel.h.."+"..sel.x.."x"..sel.y)
-	--print("prevsel:"..prevsel.w.."x"..prevsel.h.."+"..prevsel.x.."x"..prevsel.y)
-	--print("e:"..edit_mode)
 end
 
 ---
@@ -351,23 +362,7 @@ function draw_palette()
 				if (abs(x+y)==1) then
 					local cmp=mksel(sel.x+x,sel.y+y)
 					local cmphv=getpx(cmp)
-					local func="????"
-					if(cmphv.val==numvals-1) then
-						if(cmphv.hue<numhues/2) then
-							func="pass"
-						else
-							func="stop"
-						end
-					else
-						local diffh=(cmphv.hue-curhv.hue)
-						if(diffh<0) diffh+=numhues
-						local diffv=(cmphv.val-curhv.val)
-						if(diffv<0) diffv+=numvals-1
-
-						--print(cmphv.hue..cmphv.val,(x+1)*8,20+(y+1)*6,5)
-
-						func=funcmap[diffh*(numvals-1)+diffv+1]
-					end
+					func = get_func(curhv, cmphv)
 					if(x==0) then
 						posy=offy-6+(numvals*size+7)*(y+1)/2
 						posx=128/2-#func*2
@@ -383,8 +378,108 @@ function draw_palette()
 			end
 		end
 	end
+
+	if(edit_mode == 3) then
+		print(output, 0, top)
+		charwidth = flr(((128-tot_w)/2-1)/4)
+		local line = ""
+		print("", 128/2+tot_w/2+1, top)
+		local sp = #stack
+		for r=1,5 do
+			for c=1,charwidth do
+				if(sp==0) break
+				line = line..stack[sp]
+				sp-=1
+			end
+			print(line)
+			line=""
+			if(sp==0) break
+		end
+	end
+
 	print("",0,0)
 end
+
+---
+-->8
+function chr(num)
+	local control="\b\t\n\v\f\r"
+	local chars=" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+	if(num >= 8 and num <= 13) then
+		return sub(control,num-7,num-7)
+	elseif(num >= 32 and num <= 126) then
+		return sub(chars,num-31,num-31)
+	else
+		return "x"
+	end
+end
+
+function next(ptr)
+	local next = tcopy(ptr)
+	if(ptr.dir % 2==0) then
+		next.x += 1-ptr.dir
+	else
+		next.y += 2-ptr.dir
+	end
+	return next
+end
+
+---
+-->8
+function step()
+	nextp = next(ptr)
+
+	from = getpx(ptr)
+	to = getpx(nextp)
+	op = get_func(from, to)
+	if(op == "push") then
+		stack[#stack+1] = get_val(from)
+	elseif(op == "pop") then
+		stack[#stack] = nil
+	elseif(op == "dup") then
+		stack[#stack+1] = stack[#stack]
+	elseif(op == "add") then
+		top = stack[#stack]
+		stack[#stack] = nil
+		stack[#stack] += top
+	elseif(op == "mul") then
+		top = stack[#stack]
+		stack[#stack] = nil
+		stack[#stack] *= top
+	elseif(op == "cout") then
+		output = output..chr(stack[#stack])
+		stack[#stack] = nil
+	end
+
+	ptr = nextp
+	sel = mksel(ptr.x, ptr.y)
+end
+
+function get_val(px)
+	-- For our test prog this is fine
+	return 1
+end
+
+function get_func(from, to)
+	local func="????"
+	if(to.val==numvals-1) then
+		if(to.hue<numhues/2) then
+			func="pass"
+		else
+			func="stop"
+		end
+	else
+		local diffh=(to.hue-from.hue)
+		if(diffh<0) diffh+=numhues
+		local diffv=(to.val-from.val)
+		if(diffv<0) diffv+=numvals-1
+
+		func=funcmap[diffh*(numvals-1)+diffv+1]
+	end
+
+	return func
+end
+
 
 __gfx__
 ffffff8f8f8f888888999999222222dddddd1111112e2e2ed6d6d69a9a9a2e2e2effffffaaaaaa88888800000000000000000000000000000000000000000000
