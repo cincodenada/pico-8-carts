@@ -5,6 +5,7 @@ __lua__
 -- w/h: 0x0 = 1 cel
 function hex(n,d) return sub(tostr(n,true),5,6) end
 function packhv(hv) return hv.val+shl(hv.hue,4) end
+function unpackhv(hv) return {val=band(hv,0x0f), hue=lshr(band(hv,0xf0),4)} end
 
 numhues=6
 numvals=4
@@ -21,6 +22,24 @@ funcmap={
 	'dup','roll','#in',
 	'cin','#out','cout'
 }
+
+-->8
+-- generate pixel value lookup table
+pxvals = {}
+for curhue=1,numhues do
+	local colors = {
+		colormap[curhue] + shl(colormap[curhue],4),
+		colormap[curhue] + shl(colormap[curhue+numhues],4),
+		colormap[curhue+numhues] + shl(colormap[curhue],4),
+		colormap[curhue+numhues] + shl(colormap[curhue+numhues],4)
+	}
+	pxvals[colors[1]] = {hue=curhue-1,val=0}
+	pxvals[colors[2]] = {hue=curhue-1,val=1}
+	pxvals[colors[3]] = {hue=curhue-1,val=1}
+	pxvals[colors[4]] = {hue=curhue-1,val=2}
+end
+pxvals[0x00] = {hue=3,val=3} -- black
+pxvals[0x77] = {hue=0,val=3} -- white
 
 function mksel(x,y,...)
 	local sel={x=x,y=y,w=0,h=0}
@@ -48,6 +67,16 @@ function teq(a,b)
 	return true
 end
 
+function load_image(mem_start,w,h,gs,memwidth)
+	for y=0,h-1 do
+		for x=0,w-1 do
+			px=y*gs*memwidth/2+x*gs/2
+			curval = peek(mem_start+px)
+			mset(x,y,packhv(pxvals[curval]))
+		end
+	end
+end
+
 function save_image(mem_start,w,h)
 	for y=0,h-1 do
 		for x=0,w-1 do
@@ -57,85 +86,14 @@ function save_image(mem_start,w,h)
 	end
 end
 
-function load_image(mem_start,w,h,gs,memwidth)
-	-- generate pixel value lookup table
-	local pxvals = {}
-	for curhue=1,numhues do
-		--print("--"..curhue.."--")
-		local colors = {
-			colormap[curhue] + shl(colormap[curhue],4),
-			colormap[curhue] + shl(colormap[curhue+numhues],4),
-			colormap[curhue+numhues] + shl(colormap[curhue],4),
-			colormap[curhue+numhues] + shl(colormap[curhue+numhues],4)
-		}
-		--print(
-		--	hex(colors[1]).." "..
-		--	hex(colors[2]).." "..
-		--	hex(colors[3]).." "..
-		--	hex(colors[4]))
-		pxvals[colors[1]] = {hue=curhue-1,val=0}
-		pxvals[colors[2]] = {hue=curhue-1,val=1}
-		pxvals[colors[3]] = {hue=curhue-1,val=1}
-		pxvals[colors[4]] = {hue=curhue-1,val=2}
-	end
-	pxvals[0x00] = {hue=3,val=3}
-	pxvals[0x77] = {hue=0,val=3}
-
-	local lastval=0
-	local pxread=0
-	for y=0,h-1 do
-		for x=0,w-1 do
-			--print(x..","..y)
-			px=y*gs*memwidth/2+x*gs/2
-			curval = peek(mem_start+px)
-			--if(curval != lastval) do
-			--	print(hex(curval))
-			--	print(pxvals[curval].hue.."/"..pxvals[curval].val)
-			--	lastval=curval
-			--end
-			pxread+=1
-			mset(x,y,packhv(pxvals[curval]))
-		end
-	end
-end
-
-sel=mksel(0,0)
-prevsel=tcopy(sel)
-solidpat=0x0000
-midpat=0xa5a5
-pxsize=6
-gridsize=pxsize+2
-save_start=0x0000
-imw=14
-imh=14
-
-paint_mode=0
-cur_color={val=3, hue=1}
-
-cartdata('cincodenada_piet')
-load_image(save_start, imw, imh, 6, 128)
-
--- 0 = not editing
--- 1 = changing selection
--- 2 = editing colors
-edit_mode=0
-
 function getpx(px)
 	if(px.x < 0 or px.x >= imw or
 	   px.y < 0 or px.y >= imh) then
 		-- edges are treated as black
 		return {val=3,hue=4}
+	else
+		return unpackhv(mget(px.x, px.y))
 	end
-	local curval = mget(px.x,px.y)
-	
-	-- print("getpx")
-	-- print(curval)
-	local row = band(curval,0x0f)
-	local col = lshr(band(curval,0xf0),4)
-	-- print(row)
-	-- print(col)
-
-	return {val = row, hue = col}
 end
 
 function setpx(sel,px)
@@ -170,6 +128,30 @@ function getcol(px)
 		return cola + shl(colb, 4)
 	end
 end
+
+-->8
+sel=mksel(0,0)
+prevsel=tcopy(sel)
+solidpat=0x0000
+midpat=0xa5a5
+pxsize=6
+gridsize=pxsize+2
+save_start=0x0000
+imw=14
+imh=14
+
+paint_mode=0
+cur_color={val=3, hue=1}
+
+menuitem(1, "run program", function() run() end)
+
+cartdata('cincodenada_piet')
+load_image(save_start, imw, imh, 6, 128)
+
+-- 0 = not editing
+-- 1 = changing selection
+-- 2 = editing colors
+edit_mode=0
 
 function _update()
 	--local prevsel={}
@@ -252,6 +234,33 @@ function _update()
 	if(sel.y+sel.h>imh-1) then sel.y=imh-sel.h-1 end
 end
 
+function _draw()
+	cls()
+	gridwidth=flr(128/(pxsize+2))
+	for x=0,gridwidth do
+		for y=0,gridwidth do
+			draw_px(mksel(x,y))
+		end
+	end
+	if(paint_mode==1) then
+		draw_px(sel,cur_color)
+	end
+
+	draw_palette()
+	
+	local framecolor=5
+	-- yellow frame for editing
+	if(edit_mode > 1) framecolor=4
+	
+	-- draw selection rectangle
+	draw_frame(sel,gridsize,framecolor)
+
+	--print("sel:"..sel.w.."x"..sel.h.."+"..sel.x.."x"..sel.y)
+	--print("prevsel:"..prevsel.w.."x"..prevsel.h.."+"..prevsel.x.."x"..prevsel.y)
+	--print("e:"..edit_mode)
+end
+
+-->8
 function draw_px(sel,...)
 	local args = {...}
 	if(#args > 0) then
@@ -302,32 +311,6 @@ function draw_dot(sel,gs,col,offx,offy)
 		sel.y*gs+flr(gs/2)+offy,
 		col
 	)
-end
-
-function _draw()
-	cls()
-	gridwidth=flr(128/(pxsize+2))
-	for x=0,gridwidth do
-		for y=0,gridwidth do
-			draw_px(mksel(x,y))
-		end
-	end
-	if(paint_mode==1) then
-		draw_px(sel,cur_color)
-	end
-
-	draw_palette()
-	
-	local framecolor=5
-	-- yellow frame for editing
-	if(edit_mode > 1) framecolor=4
-	
-	-- draw selection rectangle
-	draw_frame(sel,gridsize,framecolor)
-
-	--print("sel:"..sel.w.."x"..sel.h.."+"..sel.x.."x"..sel.y)
-	--print("prevsel:"..prevsel.w.."x"..prevsel.h.."+"..prevsel.x.."x"..prevsel.y)
-	--print("e:"..edit_mode)
 end
 
 function draw_palette()
