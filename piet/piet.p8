@@ -269,6 +269,11 @@ function _draw()
 	if(band(col, 0xf) == bgcol) then
 		bgcol = 0
 	end
+	for n,locs in pairs(blockinfo.nums) do
+		for loc in all(locs) do
+			print(n,loc.x*gridsize+1, loc.y*gridsize,7)
+		end
+	end
 	print("███",0,0,bgcol)
 	print("bs:"..blockinfo.count,0,0,col)
 end
@@ -469,14 +474,16 @@ function get_exit(start)
 	last = {}
 	cur = {}
 	next = {}
+	block_nums = {}
 	cur[hashloc(start)] = start
 	exit = start
 	block_color = packhv(getpx(start))
 	block_size = 1
-	numloops = 0
+	numloops = 1
 	rectfill(0,128-4*gridsize,127,127,0)
 	while(true) do
 		new_px = 0
+		block_nums[numloops] = {}
 		for k,loc in pairs(cur) do
 			for dx=-1,1 do
 				for dy=-1,1 do
@@ -487,6 +494,7 @@ function get_exit(start)
 							if last[hash] == nil and cur[hash] == nil and next[hash] == nil then
 								next[hash] = check
 								new_px+=1
+								add(block_nums[numloops], check)
 							end
 						end
 					end
@@ -504,13 +512,13 @@ function get_exit(start)
 		cur = next
 		next = {}
 		numloops += 1
-		if (numloops > 5) break
 	end
 
 	return {
 		count = block_size,
 		exit = exit,
 		color = unpackhv(block_color),
+		nums = block_nums,
 	}
 end
 
