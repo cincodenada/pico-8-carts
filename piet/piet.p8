@@ -6,6 +6,7 @@ __lua__
 function hex(n,d) return sub(tostr(n,true),5,6) end
 function packhv(hv) return hv.val+shl(hv.hue,4) end
 function unpackhv(hv) return {val=band(hv,0x0f), hue=lshr(band(hv,0xf0),4)} end
+function hashloc(loc) return tostr(loc.x).."#"..tostr(loc.y) end
 
 numhues=6
 numvals=4
@@ -242,10 +243,10 @@ function _update()
 end
 
 function _draw()
-	cls()
+	-- cls()
 	gridwidth=flr(128/(pxsize+2))
 	for x=0,gridwidth do
-		for y=0,gridwidth do
+		for y=0,gridwidth-4 do
 			draw_px(mksel(x,y))
 		end
 	end
@@ -253,7 +254,7 @@ function _draw()
 		draw_px(sel,cur_color)
 	end
 
-	draw_palette()
+	--draw_palette()
 	
 	local framecolor=5
 	-- yellow frame for editing
@@ -261,6 +262,15 @@ function _draw()
 	
 	-- draw selection rectangle
 	draw_frame(sel,gridsize,framecolor)
+
+	blockinfo = get_exit(sel)
+	col = hv2col[blockinfo.color.hue][blockinfo.color.val]
+	bgcol = flr(shr(col, 4))
+	if(band(col, 0xf) == bgcol) then
+		bgcol = 0
+	end
+	print("███",0,0,bgcol)
+	print("bs:"..blockinfo.count,0,0,col)
 end
 
 ---
@@ -408,7 +418,7 @@ end
 -->8
 function chr(num)
 	local control="\b\t\n\v\f\r"
-	local chars=" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+	local chars=" !\"#$%&'()*+,-./0123456789:;<=>?@abcdefghijklmnopqrstuvwxyz[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
 	if(num >= 8 and num <= 13) then
 		return sub(control,num-7,num-7)
 	elseif(num >= 32 and num <= 126) then
@@ -455,6 +465,55 @@ function stack:roll(depth, dir)
 	end
 end
 
+function get_exit(start)
+	last = {}
+	cur = {}
+	next = {}
+	cur[hashloc(start)] = start
+	exit = start
+	block_color = packhv(getpx(start))
+	block_size = 1
+	numloops = 0
+	rectfill(0,128-4*gridsize,127,127,0)
+	while(true) do
+		new_px = 0
+		for k,loc in pairs(cur) do
+			for dx=-1,1 do
+				for dy=-1,1 do
+					if(abs(dx+dy)==1) then
+						local check = {x=loc.x+dx,y=loc.y+dy}
+						if packhv(getpx(check)) == block_color then
+							local hash = hashloc(check)
+							if last[hash] == nil and cur[hash] == nil and next[hash] == nil then
+								next[hash] = check
+								new_px+=1
+							end
+						end
+					end
+				end
+			end
+		end
+		if (new_px == 0) break
+		block_size += new_px
+		curstr = ""
+		for k,loc in pairs(cur) do
+			curstr = curstr..loc.x.."/"..loc.y.." "
+		end
+		print(curstr,0,128-3*gridsize+6*numloops,7)
+		last = cur
+		cur = next
+		next = {}
+		numloops += 1
+		if (numloops > 5) break
+	end
+
+	return {
+		count = block_size,
+		exit = exit,
+		color = unpackhv(block_color),
+	}
+end
+
 ---
 -->8
 function step()
@@ -462,6 +521,7 @@ function step()
 
 	from = getpx(state)
 	to = getpx(future)
+
 	op = get_func(from, to)
 	if(op == "push") then
 		stack:push(get_val(from))
