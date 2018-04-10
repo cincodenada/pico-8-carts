@@ -44,7 +44,7 @@ for curhue=1,numhues do
 	hv2col[curhue-1][0] = colors[1]
 	hv2col[curhue-1][1] = colors[2]
 	hv2col[curhue-1][2] = colors[4]
-	-- Add black/white
+	-- add black/white
 	hv2col[curhue-1][3] = 7*(1-band(curhue/(numhues/2),0x01))
 end
 col2hv[0x00] = {hue=3,val=3} -- black
@@ -114,8 +114,8 @@ function setpx(sel,px)
 	save_image(save_start, imw, imh)
 end
 
--- Translates a h/v pair to a fill color
--- With upper/lower nibble set properly
+-- translates a h/v pair to a fill color
+-- with upper/lower nibble set properly
 function getcol(px)
 	return hv2col[px.hue][px.val]
 end
@@ -135,7 +135,7 @@ imh=14
 paint_mode=0
 cur_color={val=3, hue=1}
 
--- Running variables
+-- running variables
 local state = {x=0, y=0, dp=0, cc=0, toggle=0}
 local stack = {}
 local output = ""
