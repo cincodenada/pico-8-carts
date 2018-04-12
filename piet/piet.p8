@@ -137,7 +137,7 @@ paint_mode=0
 cur_color={val=3, hue=1}
 
 -- running variables
-local state = {x=0, y=0, dp=0, cc=0, toggle=0}
+local state = {x=0, y=0, dp=0, cc=-1, toggle=0}
 local stack = {}
 local output = ""
 
@@ -263,7 +263,7 @@ function _draw()
 	-- draw selection rectangle
 	draw_frame(sel,gridsize,framecolor)
 
-	blockinfo = get_exit(sel)
+	blockinfo = get_exit(state)
 	col = hv2col[blockinfo.color.hue][blockinfo.color.val]
 	bgcol = flr(shr(col, 4))
 	if(band(col, 0xf) == bgcol) then
@@ -276,6 +276,8 @@ function _draw()
 	end
 	print("███",0,0,bgcol)
 	print("bs:"..blockinfo.count,0,0,col)
+
+	draw_dot(blockinfo.exit,gridsize,5,0,0)
 end
 
 ---
@@ -470,14 +472,49 @@ function stack:roll(depth, dir)
 	end
 end
 
-function get_exit(start)
+max_block = {x=nil,y=nil}
+
+function max_block:init(state)
+	if(state.dp % 2 == 0) then
+		self.axes = {'x','y'}
+		self.dirs = {1-state.dp}
+		add(self.dirs, self.dirs[1]*state.cc)
+	else
+		self.axes = {'y','x'}
+		self.dirs = {2-state.dp}
+		add(self.dirs, -self.dirs[1]*state.cc)
+	end
+	self.x = state.x
+	self.y = state.y
+end
+
+function max_block:check(check)
+	for i in 1,2 do
+		local a = self.axes[i]
+		if sgn(check[a] - self[a]) != dirs[i] and
+			check[a] != self[a] then
+			return
+		end
+	end
+	-- If we made it here, we're better
+	self.x = check.x
+	self.y = check.y
+end
+
+function get_exit(state)
+	-- Exit cmp is determined by dp/cc
+	--     -1    1
+	-- 0 -y +x +y +x
+	-- 1 +y +x +y -x
+	-- 2 +y -x -y -x
+	-- 3 -y -x -y +x
 	last = {}
 	cur = {}
 	next = {}
 	block_nums = {}
-	cur[hashloc(start)] = start
-	exit = start
-	block_color = packhv(getpx(start))
+	max_block:init(state)
+	cur[hashloc(state)] = state
+	block_color = packhv(getpx(state))
 	block_size = 1
 	numloops = 1
 	rectfill(0,128-4*gridsize,127,127,0)
@@ -495,6 +532,7 @@ function get_exit(start)
 								next[hash] = check
 								new_px+=1
 								add(block_nums[numloops], check)
+								max_block:check(check)
 							end
 						end
 					end
@@ -516,7 +554,7 @@ function get_exit(start)
 
 	return {
 		count = block_size,
-		exit = exit,
+		exit = max_block,
 		color = unpackhv(block_color),
 		nums = block_nums,
 	}
@@ -558,7 +596,7 @@ function step()
 		future.x = state.x
 		future.y = state.y
 		if(toggle==0) then
-			future.cc = 1-future.cc
+			future.cc = -future.cc
 		else
 			future.dp = (future.dp+1)%4
 		end
