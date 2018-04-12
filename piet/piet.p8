@@ -137,9 +137,7 @@ paint_mode=0
 cur_color={val=3, hue=1}
 
 -- running variables
--- dp clockwise starting at rightward
--- cc 0 = left
-local state = {x=0, y=0, dp=0, cc=0, toggle=0}
+local state = {x=0, y=0, dp=0, cc=-1, toggle=0}
 local stack = {}
 local output = ""
 
@@ -154,8 +152,13 @@ load_image(save_start, imw, imh, 6, 128)
 -- 3 = running
 edit_mode=0
 
+fake_state = {dp=0, cc=0}
+
 function _update()
 	--local prevsel={}
+	if(btnp(4)) fake_state.dp = (fake_state.dp + 1)%4
+	if(btnp(5)) fake_state.cc = -fake_state.cc
+
 	if(edit_mode == 3) then
 		if(btnp(4)) then
 			step()
@@ -265,7 +268,9 @@ function _draw()
 	-- draw selection rectangle
 	draw_frame(sel,gridsize,framecolor)
 
-	blockinfo = get_exit(state)
+	fake_state.x = sel.x;
+	fake_state.y = sel.y;
+	blockinfo = get_exit(fake_state)
 	col = hv2col[blockinfo.color.hue][blockinfo.color.val]
 	bgcol = flr(shr(col, 4))
 	if(band(col, 0xf) == bgcol) then
@@ -279,9 +284,7 @@ function _draw()
 	print("███",0,0,bgcol)
 	print("bs:"..blockinfo.count,0,0,col)
 
-	for c in all(max_blocks:get_all()) do
-		draw_dot(c,gridsize,5,0,0)
-	end
+	draw_dot(blockinfo.exit,gridsize,5,0,0)
 end
 
 ---
@@ -476,61 +479,35 @@ function stack:roll(depth, dir)
 	end
 end
 
-max_blocks = {
-	-- primary axis, secondary axis, direction
-	dirinfo = {{'x','y',1},{'y','x',1},{'x','y',-1},{'y','x',-1}}
-}
-function max_blocks:init(sel)
-	-- {primary max, secondary maxes}
-	self.best = {}
-	for di in all(dirinfo) do
-		add(self.best, {
-			sel[di[1]],
-			{sel[di[2]], sel[di[2]]}
-		})
-	end
-end
+max_block = {x=nil,y=nil}
 
-function max_blocks:get_all()
-	out = {}
-	local di = self.dirinfo
-	for i=1,4 do
-		pval = self.best[i][1]
-		svals = self.best[i][2]
-		curmin = {}
-		curmax = {}
-		curmin[di[i][1]] = pval
-		curmin[di[i][2]] = svals[1]
-		curmax[di[i][1]] = pval
-		curmax[di[i][2]] = svals[2]
-		add(out, curmin)
-		add(out, curmax)
-	end
-		
-	return out
-end
-
-function max_blocks:get(state)
+function max_block:init(state)
 	if(state.dp % 2 == 0) then
-		return {x=self.best[state.dp+1][1], y=self.best[state.dp+1][2][state.cc+1]}
+		self.axes = {'x','y'}
+		self.dirs = {1-state.dp}
+		add(self.dirs, self.dirs[1]*state.cc)
 	else
-		return {y=self.best[state.dp+1][1], x=self.best[state.dp+1][2][state.cc+1]}
+		self.axes = {'y','x'}
+		self.dirs = {2-state.dp}
+		add(self.dirs, -self.dirs[1]*state.cc)
 	end
+	self.x = state.x
+	self.y = state.y
 end
 
-function max_blocks:check(check)
-	for i in 1,4 do
-		di = dirinfo[i]
-		if check[di[1]] == self.best[i][1] then
-			local scnd = self.best[i][2]
-			-- This will never also be equal, so just check comparisons
-			if (sgn(scnd[2] - check[di[2]]) == di[3]) scnd[1] = check[di[2]]
-			if (sgn(check[di[2]] - scnd[2]) == di[3]) scnd[2] = check[di[2]]
-		elseif sgn(check[di[1]] - self.best[i][1]) == di[3] then
-			self.best[i][1] = check[di[1]]
-			self.best[i][2] = {check[di[2]], check[di[2]]}
+function max_block:check(check)
+	for i=1,2 do
+		local a = self.axes[i]
+		if not(
+			sgn(check[a] - self[a]) == self.dirs[i] or 
+			check[a] == self[a]
+		) then
+			return
 		end
 	end
+	-- If we made it here, we're better
+	self.x = check.x
+	self.y = check.y
 end
 
 function get_exit(state)
@@ -544,7 +521,7 @@ function get_exit(state)
 	cur = {}
 	next = {}
 	block_nums = {}
-	max_blocks:init(state)
+	max_block:init(state)
 	cur[hashloc(state)] = state
 	block_color = packhv(getpx(state))
 	block_size = 1
@@ -564,7 +541,7 @@ function get_exit(state)
 								next[hash] = check
 								new_px+=1
 								add(block_nums[numloops], check)
-								max_blocks:check(check)
+								max_block:check(check)
 							end
 						end
 					end
@@ -586,7 +563,7 @@ function get_exit(state)
 
 	return {
 		count = block_size,
-		exit = max_blocks,
+		exit = max_block,
 		color = unpackhv(block_color),
 		nums = block_nums,
 	}
@@ -628,7 +605,7 @@ function step()
 		future.x = state.x
 		future.y = state.y
 		if(toggle==0) then
-			future.cc = 1-future.cc
+			future.cc = -future.cc
 		else
 			future.dp = (future.dp+1)%4
 		end
