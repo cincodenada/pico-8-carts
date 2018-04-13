@@ -262,11 +262,13 @@ function _draw()
 	draw_palette()
 	
 	local framecolor=5
+	local pcolor=4
 	-- yellow frame for editing
-	if(edit_mode > 1) framecolor=4
+	if(edit_mode > 1) framecolor=4 pcolor=5
 	
 	-- draw selection rectangle
 	draw_frame(sel,gridsize,framecolor)
+	if(edit_mode == 3) draw_pointer(sel,gridsize,pcolor)
 
 	fake_state.x = sel.x;
 	fake_state.y = sel.y;
@@ -325,6 +327,18 @@ function draw_frame(sel,gs,col)
 		col
 	)
 end
+
+function draw_pointer(sel,gs,col)
+	local info = state:dpinfo()
+	local r = (gs-1)/2
+	lstart = {x=sel.x*gs+r, y=sel.y*gs+r}
+	lstart[info.axes[1]] += r*info.dirs[1]
+	lend = tcopy(lstart)
+	lend[info.axes[2]] += r*info.dirs[2]
+	if(gs % 2 == 0) lstart[info.axes[2]] += 0.5*info.dirs[2]
+	line(lstart.x, lstart.y, lend.x, lend.y, col)
+end
+
 
 function draw_dot(sel,gs,col,offx,offy)
 	rect(
@@ -452,6 +466,20 @@ function state:next()
 	return next
 end
 
+function state:dpinfo()
+	local info = {}
+	if(self.dp % 2 == 0) then
+		info.axes = {'x','y'}
+		info.dirs = {1-self.dp}
+		add(info.dirs, info.dirs[1]*self.cc)
+	else
+		info.axes = {'y','x'}
+		info.dirs = {2-self.dp}
+		add(info.dirs, -info.dirs[1]*self.cc)
+	end
+	return info
+end
+
 function stack:pop()
 	local top = self[#self]
 	self[#self] = nil
@@ -482,25 +510,17 @@ end
 max_block = {x=nil,y=nil}
 
 function max_block:init(state)
-	if(state.dp % 2 == 0) then
-		self.axes = {'x','y'}
-		self.dirs = {1-state.dp}
-		add(self.dirs, self.dirs[1]*state.cc)
-	else
-		self.axes = {'y','x'}
-		self.dirs = {2-state.dp}
-		add(self.dirs, -self.dirs[1]*state.cc)
-	end
+	self.info = state:dpinfo()
 	self.x = state.x
 	self.y = state.y
 end
 
 function max_block:check(check)
 	for i=1,2 do
-		local a = self.axes[i]
+		local a = self.info.axes[i]
 		if check[a] == self[a] then
 			-- continue
-		elseif sgn(check[a] - self[a]) == self.dirs[i] then
+		elseif sgn(check[a] - self[a]) == self.info.dirs[i] then
 			-- Make sure to push out the primary axis
 			-- if we're not equivalent
 			self.x = check.x
