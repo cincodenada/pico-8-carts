@@ -251,7 +251,7 @@ function _draw()
 	-- cls()
 	gridwidth=flr(128/(pxsize+2))
 	for x=0,gridwidth do
-		for y=0,gridwidth-4 do
+		for y=0,gridwidth do
 			draw_px(mksel(x,y))
 		end
 	end
@@ -259,7 +259,7 @@ function _draw()
 		draw_px(sel,cur_color)
 	end
 
-	--draw_palette()
+	draw_palette()
 	
 	local framecolor=5
 	-- yellow frame for editing
@@ -270,16 +270,11 @@ function _draw()
 
 	fake_state.x = sel.x;
 	fake_state.y = sel.y;
-	blockinfo = get_exit(fake_state)
+	blockinfo = get_exit(state)
 	col = hv2col[blockinfo.color.hue][blockinfo.color.val]
 	bgcol = flr(shr(col, 4))
 	if(band(col, 0xf) == bgcol) then
 		bgcol = 0
-	end
-	for n,locs in pairs(blockinfo.nums) do
-		for loc in all(locs) do
-			print(n,loc.x*gridsize+1, loc.y*gridsize,7)
-		end
 	end
 	print("███",0,0,bgcol)
 	print("bs:"..blockinfo.count,0,0,col)
@@ -531,7 +526,6 @@ function get_exit(state)
 	block_color = packhv(getpx(state))
 	block_size = 1
 	numloops = 1
-	rectfill(0,128-4*gridsize,127,127,0)
 	while(true) do
 		new_px = 0
 		block_nums[numloops] = {}
@@ -555,11 +549,6 @@ function get_exit(state)
 		end
 		if (new_px == 0) break
 		block_size += new_px
-		curstr = ""
-		for k,loc in pairs(cur) do
-			curstr = curstr..loc.x.."/"..loc.y.." "
-		end
-		print(curstr,0,128-3*gridsize+6*numloops,7)
 		last = cur
 		cur = next
 		next = {}
@@ -570,7 +559,6 @@ function get_exit(state)
 		count = block_size,
 		exit = max_block,
 		color = unpackhv(block_color),
-		nums = block_nums,
 	}
 end
 
