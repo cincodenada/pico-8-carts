@@ -458,6 +458,11 @@ function state:reset()
 	self.cc=-1
 	self.toggle=0
 	self.attempts=0
+	while(#stack > 0) do
+		stack[#stack]=nil
+	end
+	output = ""
+	sel = mksel(state.x, state.y)
 end
 
 function state:next()
