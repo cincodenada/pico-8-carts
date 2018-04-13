@@ -137,7 +137,7 @@ paint_mode=0
 cur_color={val=3, hue=1}
 
 -- running variables
-local state = {x=0, y=0, dp=0, cc=-1, toggle=0}
+local state = {x=0, y=0, dp=0, cc=-1, toggle=0, attempts=0}
 local stack = {}
 local output = ""
 
@@ -453,6 +453,7 @@ end
 
 function state:next()
 	local next = tcopy(self)
+	next.attempts = 0
 	max_block:init(self)
 	blockinfo = get_exit(self)
 	next.x = blockinfo.exit.x
@@ -596,6 +597,22 @@ function step()
 	to = getpx(future)
 
 	op = get_func(from, to)
+	if(op == "stop") then
+		state.attempts += 1
+		if state.attempts > 8 then
+			edit_mode=0
+			return
+		end
+
+		if(state.toggle==0) then
+			state.cc = -state.cc
+		else
+			state.dp = (future.dp+1)%4
+		end
+		state.toggle = 1-state.toggle
+		return
+	end
+
 	if(op == "push") then
 		stack:push(future.last_value)
 	elseif(op == "pop") then
@@ -619,14 +636,6 @@ function step()
 	elseif(op == "cout") then
 		output = output..chr(stack[#stack])
 		stack[#stack] = nil
-	elseif(op == "stop") then
-		future.x = state.x
-		future.y = state.y
-		if(toggle==0) then
-			future.cc = -future.cc
-		else
-			future.dp = (future.dp+1)%4
-		end
 	elseif(op == "roll") then
 		local rolls = stack:pop()
 		-- Easier on my brain to work with depth-1
