@@ -152,7 +152,7 @@ load_image(save_start, imw, imh, 6, 128)
 -- 3 = running
 edit_mode=0
 
-fake_state = {dp=0, cc=0}
+fake_state = {dp=0, cc=-1}
 
 function _update()
 	--local prevsel={}
@@ -498,10 +498,15 @@ end
 function max_block:check(check)
 	for i=1,2 do
 		local a = self.axes[i]
-		if not(
-			sgn(check[a] - self[a]) == self.dirs[i] or 
-			check[a] == self[a]
-		) then
+		if check[a] == self[a] then
+			-- continue
+		elseif sgn(check[a] - self[a]) == self.dirs[i] then
+			-- Make sure to push out the primary axis
+			-- if we're not equivalent
+			self.x = check.x
+			self.y = check.y
+		else
+			-- If neither of the above, we're chopped liver
 			return
 		end
 	end
