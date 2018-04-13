@@ -439,6 +439,11 @@ end
 
 function state:next()
 	local next = tcopy(self)
+	max_block:init(self)
+	blockinfo = get_exit(self)
+	next.x = blockinfo.exit.x
+	next.y = blockinfo.exit.y
+	next.last_value = blockinfo.count
 	if(self.dp % 2==0) then
 		next.x += 1-self.dp
 	else
@@ -454,7 +459,7 @@ function stack:pop()
 end
 
 function stack:push(val)
-	self[#self+1] = val
+	add(self, val)
 end
 
 function stack:roll(depth, dir)
@@ -572,11 +577,11 @@ function step()
 
 	op = get_func(from, to)
 	if(op == "push") then
-		stack:push(get_val(from))
+		stack:push(future.last_value)
 	elseif(op == "pop") then
 		stack:pop()
 	elseif(op == "dup") then
-		stack[#stack+1] = stack[#stack]
+		add(stack, stack[#stack])
 	elseif(op == "add") then
 		local top = stack:pop()
 		stack[#stack] += top
