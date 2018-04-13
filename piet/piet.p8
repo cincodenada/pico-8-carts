@@ -141,7 +141,7 @@ local state = {x=0, y=0, dp=0, cc=-1, toggle=0, attempts=0}
 local stack = {}
 local output = ""
 
-menuitem(1, "run program", function() edit_mode=3 end)
+menuitem(1, "run program", function() state:reset() edit_mode=3 end)
 
 cartdata('cincodenada_piet')
 load_image(save_start, imw, imh, 6, 128)
@@ -449,6 +449,15 @@ function chr(num)
 	else
 		return "x"
 	end
+end
+
+function state:reset()
+	self.x=0
+	self.y=0
+	self.dp=0
+	self.cc=-1
+	self.toggle=0
+	self.attempts=0
 end
 
 function state:next()
