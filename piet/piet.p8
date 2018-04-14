@@ -243,11 +243,18 @@ function _update()
 		if(btnp(2)) sel.y-=1
 		if(btnp(3)) sel.y+=1
 
+		-- image limits
+		if(sel.x < 0) sel.x=0
+		if(sel.y < 0) sel.y=0
+		if(sel.x >= imw) sel.x=imw-1
+		if(sel.y >= imh) sel.y=imh-1
+
+		-- view limits
 		-- only one of these can happen at a time since we only move orthogonally
 		if(sel.x >= topleft.x+gridwidth()-1) setview(sel.x-gridwidth()+1, topleft.y)
 		if(sel.y >= topleft.y+gridwidth()-1) setview(topleft.x, sel.y-gridwidth()+1)
-		if(sel.x<0) sel.x=0
-		if(sel.y<0) sel.y=0
+		if(sel.x < topleft.x) setview(sel.x, topleft.y)
+		if(sel.y < topleft.y) setview(topleft.x,sel.y)
 	end
 	
 	if(sel.x+sel.w>imw-1) then sel.x=imw-sel.w-1 end
