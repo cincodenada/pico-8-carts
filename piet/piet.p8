@@ -139,7 +139,7 @@ function save_image(mem_start,w,h)
 	for y=0,h-1 do
 		for x=0,w-1 do
 			px=y*w+x
-			poke(mem_start+px,mget(x,y))
+			--poke(mem_start+px,mget(x,y))
 		end
 	end
 end
@@ -150,6 +150,7 @@ function getpx(px)
 		-- edges are treated as black
 		return {val=3,hue=4}
 	else
+		print(px.x..px.y)
 		return unpackhv(mget(px.x, px.y))
 	end
 end
@@ -189,7 +190,8 @@ function view:reset()
 	self.nw = {x=0,y=0}
 end
 function view:save_camera() add(self.cameras, peek4(0x5f28)) camera() end
-function view:load_camera() poke4(0x5f28, self.cameras[#self.cameras]) self.cameras[#self.cameras] = nil end
+--function view:load_camera() poke4(0x5f28, self.cameras[#self.cameras]) self.cameras[#self.cameras] = nil end
+function view:load_camera() print("blorp") end
 function view:set(x,y) self.nw = {x=x,y=y} camera(x*view:gridsize(), y*view:gridsize()) end
 
 solidpat=0x0000
@@ -323,8 +325,9 @@ end
 
 function _draw()
 	cls()
-	for x=view.nw.x,view.nw.x+view:gridwidth() do
-		for y=view.nw.y,view.nw.y+view:gridwidth() do
+	gw = view:gridwidth()
+	for x=view.nw.x,view.nw.x+gw-1 do
+		for y=view.nw.y,view.nw.y+gw-1 do
 			draw_px(mksel(x,y))
 		end
 	end
@@ -355,8 +358,12 @@ end
 function draw_px(sel,...)
 	local args = {...}
 	if(#args > 0) then
+		print(#args)
+		print(args[1])
+		print("loading from args")
 		col=args[1]
 	else
+		print("getting px")
 		col=getpx(sel)
 	end
 
@@ -364,6 +371,13 @@ function draw_px(sel,...)
 end
 
 function draw_codel(sel,gs,col,offx,offy)
+	if(type(col) != "table") then
+		color(7)
+		print(sel.x.."x"..sel.y)
+		print(gs)
+		print(type(col))
+		die.something = 10
+	end
 	if(col.val==1) then
 		-- middle row
 		fillp(midpat)
