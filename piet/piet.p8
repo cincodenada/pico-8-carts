@@ -354,6 +354,7 @@ end
 -->8
 function draw_px(sel,...)
 	local args = {...}
+	local col
 	if(#args > 0) then
 		col=args[1]
 	else
@@ -666,7 +667,6 @@ function get_exit(state)
 	return {
 		count = block_size,
 		exit = max_block,
-		color = unpackhv(block_color),
 	}
 end
 
