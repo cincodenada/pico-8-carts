@@ -8,6 +8,54 @@ function packhv(hv) return hv.val+shl(hv.hue,4) end
 function unpackhv(hv) return {val=band(hv,0x0f), hue=lshr(band(hv,0xf0),4)} end
 function hashloc(loc) return tostr(loc.x).."#"..tostr(loc.y) end
 
+function wrap(text, width)
+	charwidth = width/4
+	text = text.." "
+	output = ""
+	curline = ""
+	word = ""
+	pos = 1
+	lines = 1
+	while(pos <= #text) do
+		local curlet = sub(text,1,1)
+		if(curlet == " ") then
+			if(#curline + #word > charwidth) then
+				output = output..curline.."\n"
+				curline=""
+				lines += 1
+			elseif(#curline + #word == charwidth) then
+				output = output..curline..word.."\n"
+				curline=""
+				lines += 1
+			else
+				curline = curline..word.." "
+			end
+			word = ""
+		else
+			-- If we have a word that's too long, just break it
+			if(#curline == "" and #word == charwidth) then
+				output = output..#word.."\n"
+				word=""
+				lines += 1
+			end
+			word = word..curlet
+		end
+		pos += 1
+	end
+	return {text=output, lines=lines}
+end
+
+function prompt(text)
+	view:save_camera()
+	wrapped = wrap(text, 64)
+	halfheight = wrapped.lines*3
+	rectfill(32,64-halfheight,95,64+halfheight-1,5)
+	rect(31,64-halfheight-1,96,64+halfheight,4)
+	print(wrapped.text, 32, 64-(wrapped.lines*3))
+	view:load_camera()
+end
+
+prompt_text=""
 numhues=6
 numvals=4
 colormap={
@@ -123,12 +171,29 @@ end
 
 ---
 -->8
-topleft={x=0,y=0}
-sel=mksel(0,0)
-prevsel=tcopy(sel)
+view = {
+	nw = {x=0,y=0},
+	pxsize = 2,
+	sel = mksel(0,0),
+	cameras = {},
+}
+function view:gridsize() return self.pxsize+2 end
+function view:gridwidth() return flr(128/(view:gridsize())) end
+function view:push_sel() self.prevsel = tcopy(self.sel) end
+function view:set_sel(x,y) self.sel.x = x self.sel.y = y end
+function view:inc_sel(x,y) self.sel.x += x self.sel.y += y end
+function view:reset()
+	self.sel = mksel(0,0)
+	camera()
+	self.prevsel = tcopy(self.sel)
+	self.nw = {x=0,y=0}
+end
+function view:save_camera() add(self.cameras, peek4(0x5f28)) camera() end
+function view:load_camera() poke4(0x5f28, self.cameras[#self.cameras]) self.cameras[#self.cameras] = nil end
+function view:set(x,y) self.nw = {x=x,y=y} camera(x*view:gridsize(), y*view:gridsize()) end
+
 solidpat=0x0000
 midpat=0xa5a5
-pxsize=6
 save_start=0x0000
 imw=64
 imh=64
@@ -154,11 +219,6 @@ edit_mode=0
 
 fake_state = {dp=0, cc=-1}
 
-function gridsize() return pxsize+2 end
-function gridwidth() return flr(128/(gridsize())) end
-function coffset() return {x=peek(0x5f28)+shl(peek(0x5f29),8),y=peek(0x5f2a)+shl(peek(0x5f2b),8)} end
-function setview(x, y) topleft = {x=x,y=y} camera(x*gridsize(), y*gridsize()) end
-
 function _update()
 	if(btnp(4)) fake_state.dp = (fake_state.dp + 1)%4
 	if(btnp(5)) fake_state.cc = -fake_state.cc
@@ -174,7 +234,7 @@ function _update()
 
 	if(btnp(5)) then
 		paint_mode=1-paint_mode
-		cur_color=getpx(sel)
+		cur_color=getpx(view.sel)
 	end
 	if(btn(4)) then
 		if(edit_mode==2) then
@@ -182,13 +242,13 @@ function _update()
 			edit_mode=-1
 		elseif(edit_mode==0) then
 			-- enter selection edit mode
-			prevsel=tcopy(sel)
+			view.push_sel()
 			edit_mode=1
 		end
 	else
 		if(edit_mode==1) then
 			-- just finished selection
-			if(teq(sel,prevsel)) then
+			if(teq(view.sel,view.prevsel)) then
 				-- if we didn't change size, edit
 				edit_mode = 2
 			else
@@ -202,7 +262,7 @@ function _update()
 
 	if(edit_mode==2) then
 		if(paint_mode==0) then
-			local px = getpx(sel)
+			local px = getpx(view.sel)
 			
 			-- handle moving from hues
 			-- to black/white and back
@@ -217,62 +277,62 @@ function _update()
 			px.val %= 4
 			px.hue %= 6
 			
-			setpx(sel,px)
+			setpx(view.sel,px)
 		else
-			if(btnp(0)) sel.x-=1
-			if(btnp(1)) sel.x+=1
-			if(btnp(2)) sel.y-=1
-			if(btnp(3)) sel.y+=1
+			if(btnp(0)) view.inc_sel(-1,0)
+			if(btnp(1)) view.inc_sel(1,0)
+			if(btnp(2)) view.inc_sel(0,-1)
+			if(btnp(3)) view.inc_sel(0,1)
 
-			setpx(sel,cur_color)
+			setpx(view.sel,cur_color)
 		end
 	elseif (edit_mode==1) then
-		if(btnp(0)) sel.w-=1
-		if(btnp(1)) sel.w+=1
-		if(btnp(2)) sel.h-=1
-		if(btnp(3)) sel.h+=1
+		if(btnp(0)) view.sel.w-=1
+		if(btnp(1)) view.sel.w+=1
+		if(btnp(2)) view.sel.h-=1
+		if(btnp(3)) view.sel.h+=1
 
-		if(sel.w<0) sel.w=0
-		if(sel.h<0) sel.h=0
+		if(view.sel.w<0) view.sel.w=0
+		if(view.sel.h<0) view.sel.h=0
 
-		if(sel.w>imw-1) sel.w=imw-1
-		if(sel.h>imh-1) sel.h=imh-1
+		if(view.sel.w>imw-1) view.sel.w=imw-1
+		if(view.sel.h>imh-1) view.sel.h=imh-1
 	elseif (edit_mode==0) then
-		if(btnp(0)) sel.x-=1
-		if(btnp(1)) sel.x+=1
-		if(btnp(2)) sel.y-=1
-		if(btnp(3)) sel.y+=1
+		if(btnp(0)) view.sel.x-=1
+		if(btnp(1)) view.sel.x+=1
+		if(btnp(2)) view.sel.y-=1
+		if(btnp(3)) view.sel.y+=1
 
 		-- image limits
-		if(sel.x < 0) sel.x=0
-		if(sel.y < 0) sel.y=0
-		if(sel.x >= imw) sel.x=imw-1
-		if(sel.y >= imh) sel.y=imh-1
+		if(view.sel.x < 0) prompt_text="Do you want to add a column?" view.sel.x=0
+		if(view.sel.y < 0) prompt_text="Do you want to add a row?" view.sel.y=0
+		if(view.sel.x >= imw) view.sel.x=imw-1
+		if(view.sel.y >= imh) view.sel.y=imh-1
 
 		-- view limits
 		-- only one of these can happen at a time since we only move orthogonally
-		if(sel.x >= topleft.x+gridwidth()-1) setview(sel.x-gridwidth()+1, topleft.y)
-		if(sel.y >= topleft.y+gridwidth()-1) setview(topleft.x, sel.y-gridwidth()+1)
-		if(sel.x < topleft.x) setview(sel.x, topleft.y)
-		if(sel.y < topleft.y) setview(topleft.x,sel.y)
+		if(view.sel.x >= view.nw.x+view:gridwidth()-1) setview(view.sel.x-view:gridwidth()+1, view.nw.y)
+		if(view.sel.y >= view.nw.y+view:gridwidth()-1) setview(view.nw.x, view.sel.y-view:gridwidth()+1)
+		if(view.sel.x < view.nw.x) setview(view.sel.x, view.nw.y)
+		if(view.sel.y < view.nw.y) setview(view.nw.x,view.sel.y)
 	end
 	
-	if(sel.x+sel.w>imw-1) then sel.x=imw-sel.w-1 end
-	if(sel.y+sel.h>imh-1) then sel.y=imh-sel.h-1 end
+	if(view.sel.x+view.sel.w>imw-1) then view.sel.x=imw-view.sel.w-1 end
+	if(view.sel.y+view.sel.h>imh-1) then view.sel.y=imh-view.sel.h-1 end
 end
 
 function _draw()
 	cls()
-	for x=topleft.x,topleft.x+gridwidth() do
-		for y=topleft.y,topleft.y+gridwidth() do
+	for x=view.nw.x,view.nw.x+view:gridwidth() do
+		for y=view.nw.y,view.nw.y+view:gridwidth() do
 			draw_px(mksel(x,y))
 		end
 	end
 	if(paint_mode==1) then
-		draw_px(sel,cur_color)
+		draw_px(view.sel,cur_color)
 	end
 
-	print(sel.x.."x"..sel.y.."+"..topleft.x.."x"..topleft.y,7)
+	print(view.sel.x.."x"..view.sel.y.."+"..view.nw.x.."x"..view.nw.y,7)
 
 	draw_palette()
 	
@@ -282,21 +342,12 @@ function _draw()
 	if(edit_mode > 1) framecolor=4 pcolor=5
 	
 	-- draw selection rectangle
-	draw_frame(sel,gridsize(),framecolor)
-	if(edit_mode == 3) draw_pointer(sel,gridsize(),pcolor)
+	draw_frame(view.sel,view:gridsize(),framecolor)
+	if(edit_mode == 3) draw_pointer(view.sel,view:gridsize(),pcolor)
 
-	fake_state.x = sel.x;
-	fake_state.y = sel.y;
-	blockinfo = get_exit(state)
-	col = hv2col[blockinfo.color.hue][blockinfo.color.val]
-	bgcol = flr(shr(col, 4))
-	if(band(col, 0xf) == bgcol) then
-		bgcol = 0
+	if(prompt_text!="") then
+		prompt(prompt_text)
 	end
-	print("███",0,12,bgcol)
-	print("bs:"..blockinfo.count,0,12,col)
-
-	draw_dot(blockinfo.exit,gridsize(),5,0,0)
 end
 
 ---
@@ -309,7 +360,7 @@ function draw_px(sel,...)
 		col=getpx(sel)
 	end
 
-	draw_codel(sel,gridsize(),col,0,0)
+	draw_codel(sel,view:gridsize(),col,0,0)
 end
 
 function draw_codel(sel,gs,col,offx,offy)
@@ -366,8 +417,7 @@ function draw_dot(sel,gs,col,offx,offy)
 end
 
 function draw_palette()
-	cpos = coffset()
-	camera(0,0)
+	view:save_camera()
 	local size=4
 	-- 1 char on each side
 	-- plus 1px padding/side
@@ -376,7 +426,7 @@ function draw_palette()
 	-- plus 1px padding/side
 	local tot_h=numvals*size+2*6+2
 
-	if (sel.y > 128/gridsize()/2) then
+	if (view.sel.y > 128/view:gridsize()/2) then
 		top = 0
 	else
 		top = 128-tot_h
@@ -400,7 +450,7 @@ function draw_palette()
 		end
 	end
 	
-	local curhv = getpx(sel)
+	local curhv = getpx(view.sel)
 	draw_dot(mksel(curhv.hue,curhv.val),size,5,offx,offy)
 
 	if(curhv.val==numvals-1) then
@@ -410,7 +460,7 @@ function draw_palette()
 		for x=-1,1 do
 			for y=-1,1 do
 				if (abs(x+y)==1) then
-					local cmp=mksel(sel.x+x,sel.y+y)
+					local cmp=mksel(view.sel.x+x,view.sel.y+y)
 					local cmphv=getpx(cmp)
 					func = get_func(curhv, cmphv)
 					if(x==0) then
@@ -452,7 +502,7 @@ function draw_palette()
 	end
 
 	print("",0,0)
-	camera(cpos.x, cpos.y)
+	view:load_camera()
 end
 
 ---
@@ -480,7 +530,7 @@ function state:reset()
 		stack[#stack]=nil
 	end
 	output = ""
-	sel = mksel(state.x, state.y)
+	view:reset()
 end
 
 function state:next()
@@ -684,7 +734,7 @@ function step()
 	end
 
 	state = future
-	sel = mksel(state.x, state.y)
+	view.set_sel(state.x, state.y)
 end
 
 function get_val(px)
