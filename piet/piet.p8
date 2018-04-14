@@ -156,6 +156,8 @@ fake_state = {dp=0, cc=-1}
 
 function gridsize() return pxsize+2 end
 function gridwidth() return flr(128/(gridsize())) end
+function coffset() return {x=peek(0x5f28)+shl(peek(0x5f29),8),y=peek(0x5f2a)+shl(peek(0x5f2b),8)} end
+function setview(x, y) topleft = {x=x,y=y} camera(x*gridsize(), y*gridsize()) end
 
 function _update()
 	if(btnp(4)) fake_state.dp = (fake_state.dp + 1)%4
@@ -241,10 +243,11 @@ function _update()
 		if(btnp(2)) sel.y-=1
 		if(btnp(3)) sel.y+=1
 
+		-- only one of these can happen at a time since we only move orthogonally
+		if(sel.x >= topleft.x+gridwidth()-1) setview(sel.x-gridwidth()+1, topleft.y)
+		if(sel.y >= topleft.y+gridwidth()-1) setview(topleft.x, sel.y-gridwidth()+1)
 		if(sel.x<0) sel.x=0
 		if(sel.y<0) sel.y=0
-		if(sel.x >= topleft.x+gridwidth()-1) topleft.x = sel.x-gridwidth()+1
-		if(sel.y >= topleft.y+gridwidth()-1) topleft.y = sel.y-gridwidth()+1
 	end
 	
 	if(sel.x+sel.w>imw-1) then sel.x=imw-sel.w-1 end
@@ -272,11 +275,8 @@ function _draw()
 	if(edit_mode > 1) framecolor=4 pcolor=5
 	
 	-- draw selection rectangle
-	frame_pos = tcopy(sel)
-	frame_pos.x -= topleft.x
-	frame_pos.y -= topleft.y
-	draw_frame(frame_pos,gridsize(),framecolor)
-	if(edit_mode == 3) draw_pointer(framepos,gridsize(),pcolor)
+	draw_frame(sel,gridsize(),framecolor)
+	if(edit_mode == 3) draw_pointer(sel,gridsize(),pcolor)
 
 	fake_state.x = sel.x;
 	fake_state.y = sel.y;
@@ -301,8 +301,6 @@ function draw_px(sel,...)
 	else
 		col=getpx(sel)
 	end
-	sel.x -= topleft.x
-	sel.y -= topleft.y
 
 	draw_codel(sel,gridsize(),col,0,0)
 end
