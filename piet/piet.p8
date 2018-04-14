@@ -326,9 +326,10 @@ end
 function _draw()
 	cls()
 	gw = view:gridwidth()
+	local x,y
 	for x=view.nw.x,view.nw.x+gw-1 do
 		for y=view.nw.y,view.nw.y+gw-1 do
-			draw_px(mksel(x,y))
+			draw_px({x=x,y=y})
 		end
 	end
 	if(paint_mode==1) then
@@ -358,8 +359,55 @@ end
 function draw_px(sel,...)
 	local args = {...}
 	if(#args > 0) then
+		color(7)
 		print(#args)
 		print(args[1])
+		print("looking for function...")
+if(args[1]==hex) print "hex"
+if(args[1]==packhv) print "packhv"
+if(args[1]==unpackhv) print "unpackhv"
+if(args[1]==hashloc) print "hashloc"
+if(args[1]==wrap) print "wrap"
+if(args[1]==prompt) print "prompt"
+if(args[1]==mksel) print "mksel"
+if(args[1]==tcopy) print "tcopy"
+if(args[1]==teq) print "teq"
+if(args[1]==load_image) print "load_image"
+if(args[1]==save_image) print "save_image"
+if(args[1]==getpx) print "getpx"
+if(args[1]==setpx) print "setpx"
+if(args[1]==getcol) print "getcol"
+if(args[1]==view.gridsize) print "view:gridsize"
+if(args[1]==view.gridwidth) print "view:gridwidth"
+if(args[1]==view.push_sel) print "view:push_sel"
+if(args[1]==view.set_sel) print "view:set_sel"
+if(args[1]==view.inc_sel) print "view:inc_sel"
+if(args[1]==view.reset) print "view:reset"
+if(args[1]==view.save_camera) print "view:save_camera"
+if(args[1]==view.load_camera) print "view:load_camera"
+if(args[1]==view.load_camera) print "view:load_camera"
+if(args[1]==view.set) print "view:set"
+if(args[1]==_update) print "_update"
+if(args[1]==_draw) print "_draw"
+if(args[1]==draw_px) print "draw_px"
+if(args[1]==draw_codel) print "draw_codel"
+if(args[1]==draw_frame) print "draw_frame"
+if(args[1]==draw_pointer) print "draw_pointer"
+if(args[1]==draw_dot) print "draw_dot"
+if(args[1]==draw_palette) print "draw_palette"
+if(args[1]==chr) print "chr"
+if(args[1]==state.reset) print "state:reset"
+if(args[1]==state.next) print "state:next"
+if(args[1]==state.dpinfo) print "state:dpinfo"
+if(args[1]==stack.pop) print "stack:pop"
+if(args[1]==stack.push) print "stack:push"
+if(args[1]==stack.roll) print "stack:roll"
+if(args[1]==max_block.init) print "max_block:init"
+if(args[1]==max_block.check) print "max_block:check"
+if(args[1]==get_exit) print "get_exit"
+if(args[1]==step) print "step"
+if(args[1]==get_val) print "get_val"
+if(args[1]==get_func) print "get_func"
 		print("loading from args")
 		col=args[1]
 	else
