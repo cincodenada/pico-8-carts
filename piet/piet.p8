@@ -359,6 +359,8 @@ function draw_dot(sel,gs,col,offx,offy)
 end
 
 function draw_palette()
+	cpos = coffset()
+	camera(0,0)
 	local size=4
 	-- 1 char on each side
 	-- plus 1px padding/side
@@ -443,6 +445,7 @@ function draw_palette()
 	end
 
 	print("",0,0)
+	camera(cpos.x, cpos.y)
 end
 
 ---
