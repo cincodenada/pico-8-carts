@@ -7,21 +7,6 @@ function hex(n,d) return sub(tostr(n,true),5,6) end
 function packhv(hv) return hv.val+shl(hv.hue,4) end
 function unpackhv(hv) return {val=band(hv,0x0f), hue=lshr(band(hv,0xf0),4)} end
 function hashloc(loc) return tostr(loc.x).."#"..tostr(loc.y) end
-function pbtn(i) return (not prompt.just_ended and btn(i)) end
-function iget(x,y)
-	if (x >= image.max_w) then
-		x -= image.max_w
-		y += image.max_w
-	end
-	return peek(y*image.max_w+x)
-end
-function iset(x,y,val)
-	if (x >= image.max_w) then
-		x -= image.max_w
-		y += image.max_w
-	end
-	return poke(y*image.max_w+x,val)
-end
 
 function wrap(text, width)
 	local charwidth = width/4
@@ -61,12 +46,13 @@ function wrap(text, width)
 	return {text=output, lines=lines}
 end
 
-prompt = {
+local prompt = {
 	text = "",
 	answer = nil,
 	callback = nil,
 	just_ended = false,
 }
+function pbtn(i) return (not prompt.just_ended and btn(i)) end
 function prompt:show(text, callback)
 	local wrapped = wrap(text, 62)
 	wrapped.text = wrapped.text.."z=yes / x=no"
@@ -117,7 +103,7 @@ local colormap={
 	8,9,3,13,1,2
 }
 
-funcmap={
+local funcmap={
 	'n/a','push','pop',
 	'add','sub','mul',
 	'div','mod','not',
@@ -153,16 +139,6 @@ end
 col2hv[0x00] = {hue=3,val=3} -- black
 col2hv[0x77] = {hue=0,val=3} -- white
 
-for h,p in pairs(hv2col) do
-	for v,col in pairs(p) do
-		local rev=col2hv[col]
-		if(rev.hue != h or rev.val != v) then
-			print(h.."/"..v.."->"..hex(col,2).."->"..rev.hue.."/"..rev.val)
-		end
-	end
-end
-stop("eh?")
-
 function mksel(x,y,...)
 	local sel={x=x,y=y,w=0,h=0}
 	local args = {...}
@@ -194,7 +170,7 @@ end
 -- 64x128 bytes
 -- plus map-only data of 128x32
 -- For a total of 128x96 bytes
-image = {
+local image = {
 	w=64,
 	h=64,
 	max_bytes=0x2000,
@@ -202,6 +178,20 @@ image = {
 	max_w=64,
 	max_h=128,
 }
+function iget(x,y)
+	if (x >= image.max_w) then
+		x -= image.max_w
+		y += image.max_w
+	end
+	return peek(y*image.max_w+x)
+end
+function iset(x,y,val)
+	if (x >= image.max_w) then
+		x -= image.max_w
+		y += image.max_w
+	end
+	return poke(y*image.max_w+x,val)
+end
 function image:load(mem_start,w,h,gs,memwidth)
 	self.w=w
 	self.h=h
@@ -292,7 +282,7 @@ end
 
 ---
 -->8
-view = {
+local view = {
 	nw = {x=0,y=0},
 	pxsize = 2,
 	sel = mksel(0,0),
@@ -313,11 +303,11 @@ function view:save_camera() add(self.cameras, peek4(0x5f28)) camera() end
 function view:load_camera() poke4(0x5f28, self.cameras[#self.cameras]) self.cameras[#self.cameras] = nil end
 function view:set(x,y) self.nw = {x=x,y=y} camera(x*view:gridsize(), y*view:gridsize()) end
 
-solidpat=0x0000
-midpat=0xa5a5
+local solidpat=0x0000
+local midpat=0xa5a5
 
-paint_mode=0
-cur_color={val=3, hue=1}
+local paint_mode=0
+local cur_color={val=3, hue=1}
 
 -- running variables
 local state = {x=0, y=0, dp=0, cc=-1, toggle=0, attempts=0}
@@ -334,9 +324,9 @@ cartdata('cincodenada_piet')
 -- 1 = changing selection
 -- 2 = editing colors
 -- 3 = running
-edit_mode=0
+local edit_mode=0
 
-fake_state = {dp=0, cc=-1}
+local fake_state = {dp=0, cc=-1}
 
 function _update()
 	if(prompt:active()) then
@@ -395,15 +385,18 @@ function _update()
 			local hueinc=1
 			if(px.val==numvals-1) hueinc=numhues/2
 			
-			if(btnp(0)) px.hue-=hueinc
-			if(btnp(1)) px.hue+=hueinc
-			if(btnp(2)) px.val-=1
-			if(btnp(3)) px.val+=1
+			changed=false
+			if(btnp(0)) px.hue-=hueinc changed=true
+			if(btnp(1)) px.hue+=hueinc changed=true
+			if(btnp(2)) px.val-=1 changed=true
+			if(btnp(3)) px.val+=1 changed=true
 			
-			px.val %= 4
-			px.hue %= 6
-			
-			image:setpx(view.sel,px)
+			if(changed) then
+				px.val %= 4
+				px.hue %= 6
+				
+				image:setpx(view.sel,px)
+			end
 		else
 			if(btnp(0)) view.inc_sel(-1,0)
 			if(btnp(1)) view.inc_sel(1,0)
@@ -735,7 +728,7 @@ function stack:roll(depth, dir)
 	end
 end
 
-max_block = {x=nil,y=nil}
+local max_block = {x=nil,y=nil}
 
 function max_block:init(state)
 	self.info = state:dpinfo()
