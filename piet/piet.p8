@@ -166,7 +166,19 @@ function teq(a,b)
 	return true
 end
 
-function load_image(mem_start,w,h,gs,memwidth)
+-- Stored in map data
+-- 128x64 bytes
+image = {
+	w=16,
+	h=16,
+	max_bytes=0x2000,
+	mem_start=0x1000,
+	max_w=128,
+	max_h=64,
+}
+function image:load(mem_start,w,h,gs,memwidth)
+	self.w=w
+	self.h=h
 	for y=0,h-1 do
 		for x=0,w-1 do
 			px=y*gs*memwidth/2+x*gs/2
@@ -176,16 +188,16 @@ function load_image(mem_start,w,h,gs,memwidth)
 	end
 end
 
-function save_image(mem_start,w,h)
-	for y=0,h-1 do
-		for x=0,w-1 do
-			px=y*w+x
+function image:save(mem_start)
+	for y=0,self.h-1 do
+		for x=0,self.w-1 do
+			px=y*self.w+x
 			poke(mem_start+px,mget(x,y))
 		end
 	end
 end
 
-function getpx(px)
+function image:getpx(px)
 	if(px.x < 0 or px.x >= imw or
 	   px.y < 0 or px.y >= imh) then
 		-- edges are treated as black
@@ -195,13 +207,13 @@ function getpx(px)
 	end
 end
 
-function setpx(sel,px)
+function image:setpx(sel,px)
 	for x=sel.x,sel.x+sel.w do
 		for y=sel.y,sel.y+sel.h do
 			mset(x,y,packhv(px))
 		end
 	end
-	save_image(save_start, imw, imh)
+	self:save(save_start)
 end
 
 -- translates a h/v pair to a fill color
@@ -250,7 +262,7 @@ local output = ""
 menuitem(1, "run program", function() state:reset() edit_mode=3 end)
 
 cartdata('cincodenada_piet')
-load_image(save_start, imw, imh, 2, 128)
+image:load(save_start, imw, imh, 2, 128)
 
 -- 0 = not editing
 -- 1 = changing selection
@@ -282,7 +294,7 @@ function _update()
 
 	if(btnp(5)) then
 		paint_mode=1-paint_mode
-		cur_color=getpx(view.sel)
+		cur_color=image:getpx(view.sel)
 	end
 	if(pbtn(4)) then
 		if(edit_mode==2) then
@@ -310,7 +322,7 @@ function _update()
 
 	if(edit_mode==2) then
 		if(paint_mode==0) then
-			local px = getpx(view.sel)
+			local px = image:getpx(view.sel)
 			
 			-- handle moving from hues
 			-- to black/white and back
@@ -325,14 +337,14 @@ function _update()
 			px.val %= 4
 			px.hue %= 6
 			
-			setpx(view.sel,px)
+			image:setpx(view.sel,px)
 		else
 			if(btnp(0)) view.inc_sel(-1,0)
 			if(btnp(1)) view.inc_sel(1,0)
 			if(btnp(2)) view.inc_sel(0,-1)
 			if(btnp(3)) view.inc_sel(0,1)
 
-			setpx(view.sel,cur_color)
+			image:setpx(view.sel,cur_color)
 		end
 	elseif (edit_mode==1) then
 		if(btnp(0)) view.sel.w-=1
@@ -416,7 +428,7 @@ function draw_px(sel,...)
 	if(#args > 0) then
 		col=args[1]
 	else
-		col=getpx(sel)
+		col=image:getpx(sel)
 	end
 
 	draw_codel(sel,view:gridsize(),col,0,0)
@@ -509,7 +521,7 @@ function draw_palette()
 		end
 	end
 	
-	local curhv = getpx(view.sel)
+	local curhv = image:getpx(view.sel)
 	draw_dot(mksel(curhv.hue,curhv.val),size,5,offx,offy)
 
 	if(curhv.val==numvals-1) then
@@ -520,7 +532,7 @@ function draw_palette()
 			for y=-1,1 do
 				if (abs(x+y)==1) then
 					local cmp=mksel(view.sel.x+x,view.sel.y+y)
-					local cmphv=getpx(cmp)
+					local cmphv=image:getpx(cmp)
 					func = get_func(curhv, cmphv)
 					if(x==0) then
 						posy=offy-6+(numvals*size+7)*(y+1)/2
@@ -690,7 +702,7 @@ function get_exit(state)
 	block_nums = {}
 	max_block:init(state)
 	cur[hashloc(state)] = state
-	block_color = packhv(getpx(state))
+	block_color = packhv(image:getpx(state))
 	block_size = 1
 	numloops = 1
 	while(true) do
@@ -701,7 +713,7 @@ function get_exit(state)
 				for dy=-1,1 do
 					if(abs(dx+dy)==1) then
 						local check = {x=loc.x+dx,y=loc.y+dy}
-						if packhv(getpx(check)) == block_color then
+						if packhv(image:getpx(check)) == block_color then
 							local hash = hashloc(check)
 							if last[hash] == nil and cur[hash] == nil and next[hash] == nil then
 								next[hash] = check
@@ -733,8 +745,8 @@ end
 function step()
 	local future = state:next()
 
-	from = getpx(state)
-	to = getpx(future)
+	from = image:getpx(state)
+	to = image:getpx(future)
 
 	op = get_func(from, to)
 	if(op == "stop") then
