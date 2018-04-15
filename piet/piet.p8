@@ -149,7 +149,7 @@ for curhue=1,numhues do
 	hv2col[curhue-1][1] = colors[2]
 	hv2col[curhue-1][2] = colors[4]
 	-- add black/white
-	hv2col[curhue-1][3] = 7*(1-band(curhue/(numhues/2),0x01))
+	hv2col[curhue-1][3] = 0x77*(1-band(curhue/(numhues/2),0x01))
 end
 col2hv[0x00] = {hue=3,val=3} -- black
 col2hv[0x77] = {hue=0,val=3} -- white
@@ -229,7 +229,7 @@ function image:add_row(before)
 		end
 	end
 	--black = packhv({hue=3,val=5})
-	black = 0
+	local black = 0
 	for x=0,self.w-1 do
 		iset(x,before,black)
 	end
@@ -246,7 +246,7 @@ function image:add_col(before)
 		end
 	end
 	--black = packhv({hue=3,val=5})
-	black = 0
+	local black = 0
 	for y=0,self.h-1 do
 		iset(before,y,black)
 	end
@@ -255,8 +255,8 @@ function image:add_col(before)
 end
 
 function image:getpx(px)
-	if(px.x < 0 or px.x >= image.w or
-	   px.y < 0 or px.y >= image.h) then
+	if(px.x < 0 or px.x >= self.w or
+	   px.y < 0 or px.y >= self.h) then
 		-- edges are treated as black
 		return {val=3,hue=4}
 	else
