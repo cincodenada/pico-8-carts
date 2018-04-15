@@ -665,7 +665,6 @@ function draw_palette()
 	end
 	
 	local curhv = image:getpx(view.sel)
-	print(curhv.hue.."#"..curhv.val,0,120,7)
 	draw_dot(mksel(curhv.hue,curhv.val),size,5,offx,offy)
 
 	if(curhv.val==numvals-1) then
@@ -677,7 +676,6 @@ function draw_palette()
 				if (abs(x+y)==1) then
 					local cmp=mksel(view.sel.x+x,view.sel.y+y)
 					local cmphv=image:getpx(cmp)
-					print(cmphv.hue.."#"..cmphv.val,12+12*x,98+6*y,7)
 					func = get_func(curhv, cmphv)
 					if(x==0) then
 						posy=offy-6+(numvals*size+7)*(y+1)/2
