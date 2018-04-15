@@ -111,9 +111,8 @@ function prompt:active()
 	return (self.text!="")
 end
 
-numhues=6
-numvals=4
-colormap={
+local numhues,numvals = 6,4
+local colormap={
 	15,10,11,6,12,14,
 	8,9,3,13,1,2
 }
@@ -130,29 +129,39 @@ funcmap={
 ---
 -->8
 -- generate pico-8 color <-> hv lookup tables
-col2hv = {}
-hv2col = {}
-for curhue=1,numhues do
+local col2hv = {}
+local hv2col = {}
+for curhue=0,numhues-1 do
 	local colors = {
-		colormap[curhue] + shl(colormap[curhue],4),
-		colormap[curhue] + shl(colormap[curhue+numhues],4),
-		colormap[curhue+numhues] + shl(colormap[curhue],4),
-		colormap[curhue+numhues] + shl(colormap[curhue+numhues],4)
+		colormap[curhue+1] + shl(colormap[curhue+1],4),
+		colormap[curhue+1] + shl(colormap[curhue+1+numhues],4),
+		colormap[curhue+1+numhues] + shl(colormap[curhue+1],4),
+		colormap[curhue+1+numhues] + shl(colormap[curhue+1+numhues],4)
 	}
-	col2hv[colors[1]] = {hue=curhue-1,val=0}
-	col2hv[colors[2]] = {hue=curhue-1,val=1}
-	col2hv[colors[3]] = {hue=curhue-1,val=1}
-	col2hv[colors[4]] = {hue=curhue-1,val=2}
+	col2hv[colors[1]] = {hue=curhue,val=0}
+	col2hv[colors[2]] = {hue=curhue,val=1}
+	col2hv[colors[3]] = {hue=curhue,val=1}
+	col2hv[colors[4]] = {hue=curhue,val=2}
 	
-	hv2col[curhue-1] = {}
-	hv2col[curhue-1][0] = colors[1]
-	hv2col[curhue-1][1] = colors[2]
-	hv2col[curhue-1][2] = colors[4]
+	hv2col[curhue] = {}
+	hv2col[curhue][0] = colors[1]
+	hv2col[curhue][1] = colors[2]
+	hv2col[curhue][2] = colors[4]
 	-- add black/white
-	hv2col[curhue-1][3] = 0x77*(1-band(curhue/(numhues/2),0x01))
+	hv2col[curhue][3] = 0x77*(1-flr(curhue/(numhues/2)))
 end
 col2hv[0x00] = {hue=3,val=3} -- black
 col2hv[0x77] = {hue=0,val=3} -- white
+
+for h,p in pairs(hv2col) do
+	for v,col in pairs(p) do
+		local rev=col2hv[col]
+		if(rev.hue != h or rev.val != v) then
+			print(h.."/"..v.."->"..hex(col,2).."->"..rev.hue.."/"..rev.val)
+		end
+	end
+end
+stop("eh?")
 
 function mksel(x,y,...)
 	local sel={x=x,y=y,w=0,h=0}
@@ -268,6 +277,7 @@ end
 function image:setpx(sel,px)
 	for x=sel.x,sel.x+sel.w do
 		for y=sel.y,sel.y+sel.h do
+			print(px.hue.."/"..px.val)
 			iset(x,y,hv2col[px.hue][px.val])
 			--mset(x,y,packhv(px))
 		end
@@ -384,7 +394,7 @@ function _update()
 			-- to black/white and back
 			local hueinc=1
 			if(px.val==numvals-1) hueinc=numhues/2
-							
+			
 			if(btnp(0)) px.hue-=hueinc
 			if(btnp(1)) px.hue+=hueinc
 			if(btnp(2)) px.val-=1
@@ -459,8 +469,8 @@ end
 
 function _draw()
 	cls()
-	for x=view.nw.x,view.nw.x+view:gridwidth() do
-		for y=view.nw.y,view.nw.y+view:gridwidth() do
+	for x=view.nw.x,view.nw.x+view:gridwidth()-1 do
+		for y=view.nw.y,view.nw.y+view:gridwidth()-1 do
 			draw_px(mksel(x,y))
 		end
 	end
