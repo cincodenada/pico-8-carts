@@ -50,9 +50,10 @@ prompt = {
 	text = "",
 	answer = nil,
 	callback = nil,
+	just_ended = false,
 }
 function prompt:show(text, callback)
-	local wrapped = wrap(text, 64)
+	local wrapped = wrap(text, 62)
 	wrapped.text = wrapped.text.."z=yes / x=no"
 	wrapped.lines += 1
 
@@ -65,9 +66,9 @@ end
 function prompt:draw()
 	if(not self:active()) return
 	view:save_camera()
-	rectfill(32,64-self.halfheight,95,64+self.halfheight-1,5)
-	rect(31,64-self.halfheight-1,96,64+self.halfheight,4)
-	print(self.text, 32, 64-self.halfheight)
+	rectfill(32,64-self.halfheight,95,64+self.halfheight,5)
+	rect(31,64-self.halfheight-1,96,64+self.halfheight+1,4)
+	print(self.text, 33, 64-self.halfheight+1)
 	view:load_camera()
 end
 
@@ -75,9 +76,20 @@ function prompt:check()
 	if(btnp(4) or btnp(5)) then
 		self.answer = btnp(4)
 		self.text = ""
+		self.callback()
+		self.answer = nil
+		self.callback = nil
+		self.just_ended = true
 		return true
 	end
 	return false
+end
+
+-- Clear button pressed once they're released
+function prompt:update_buttons()
+	if(not btn(4) and not btn(5)) then
+		self.just_ended = false
+	end
 end
 
 function prompt:active()
@@ -249,10 +261,11 @@ fake_state = {dp=0, cc=-1}
 
 function _update()
 	if(prompt:active()) then
-		if(prompt:check()) prompt.callback()
+		prompt:check()
 		-- don't respond to input while prompting
 		return
 	end
+	prompt:update_buttons()
 
 	if(btnp(4)) fake_state.dp = (fake_state.dp + 1)%4
 	if(btnp(5)) fake_state.cc = -fake_state.cc
@@ -270,7 +283,7 @@ function _update()
 		paint_mode=1-paint_mode
 		cur_color=getpx(view.sel)
 	end
-	if(btn(4)) then
+	if(not prompt.just_ended and btn(4)) then
 		if(edit_mode==2) then
 			-- exit edit mode
 			edit_mode=-1
