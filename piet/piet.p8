@@ -197,9 +197,43 @@ function image:save(mem_start)
 	end
 end
 
+function image:add_row(before)
+	if(self.h == self.max_h) return false
+
+	for y=self.h,before+1,-1 do
+		for x=0,self.w-1 do
+			-- TODO: Use bigger copy functions
+			mset(x,y,mget(x,y-1))
+		end
+	end
+	black = packhv({hue=3,val=5})
+	for x=0,self.w-1 do
+		mset(x,before,black)
+	end
+
+	self.h += 1
+end
+
+function image:add_col(before)
+	if(self.w == self.max_w) return false
+
+	for x=self.w,before+1,-1 do
+		for y=0,self.h-1 do
+			-- TODO: Use bigger copy functions
+			mset(x,y,mget(x-1,y))
+		end
+	end
+	black = packhv({hue=3,val=5})
+	for y=0,self.h-1 do
+		mset(before,y,black)
+	end
+
+	self.w += 1
+end
+
 function image:getpx(px)
-	if(px.x < 0 or px.x >= imw or
-	   px.y < 0 or px.y >= imh) then
+	if(px.x < 0 or px.x >= image.w or
+	   px.y < 0 or px.y >= image.h) then
 		-- edges are treated as black
 		return {val=3,hue=4}
 	else
@@ -248,8 +282,6 @@ function view:set(x,y) self.nw = {x=x,y=y} camera(x*view:gridsize(), y*view:grid
 solidpat=0x0000
 midpat=0xa5a5
 save_start=0x0000
-imw=64
-imh=64
 
 paint_mode=0
 cur_color={val=3, hue=1}
@@ -355,8 +387,8 @@ function _update()
 		if(view.sel.w<0) view.sel.w=0
 		if(view.sel.h<0) view.sel.h=0
 
-		if(view.sel.w>imw-1) view.sel.w=imw-1
-		if(view.sel.h>imh-1) view.sel.h=imh-1
+		if(view.sel.w>image.w-1) view.sel.w=image.w-1
+		if(view.sel.h>image.h-1) view.sel.h=image.h-1
 	elseif (edit_mode==0) then
 		if(btnp(0)) view.sel.x-=1
 		if(btnp(1)) view.sel.x+=1
@@ -366,30 +398,38 @@ function _update()
 		-- image limits
 		if(view.sel.x < 0) prompt:show("do you want to add a column?", add_col) view.sel.x=0
 		if(view.sel.y < 0) prompt:show("do you want to add a row?", add_row) view.sel.y=0
-		if(view.sel.x >= imw) view.sel.x=imw-1
-		if(view.sel.y >= imh) view.sel.y=imh-1
+		if(view.sel.x >= image.w) view.sel.x=image.w-1
+		if(view.sel.y >= image.h) view.sel.y=image.h-1
 
 		-- view limits
 		-- only one of these can happen at a time since we only move orthogonally
-		if(view.sel.x >= view.nw.x+view:gridwidth()-1) setview(view.sel.x-view:gridwidth()+1, view.nw.y)
-		if(view.sel.y >= view.nw.y+view:gridwidth()-1) setview(view.nw.x, view.sel.y-view:gridwidth()+1)
-		if(view.sel.x < view.nw.x) setview(view.sel.x, view.nw.y)
-		if(view.sel.y < view.nw.y) setview(view.nw.x,view.sel.y)
+		if(view.sel.x >= view.nw.x+view:gridwidth()-1) view:set(view.sel.x-view:gridwidth()+1, view.nw.y)
+		if(view.sel.y >= view.nw.y+view:gridwidth()-1) view:set(view.nw.x, view.sel.y-view:gridwidth()+1)
+		if(view.sel.x < view.nw.x) view:set(view.sel.x, view.nw.y)
+		if(view.sel.y < view.nw.y) view:set(view.nw.x,view.sel.y)
 	end
 	
-	if(view.sel.x+view.sel.w>imw-1) then view.sel.x=imw-view.sel.w-1 end
-	if(view.sel.y+view.sel.h>imh-1) then view.sel.y=imh-view.sel.h-1 end
+	if(view.sel.x+view.sel.w>image.w-1) then view.sel.x=image.w-view.sel.w-1 end
+	if(view.sel.y+view.sel.h>image.h-1) then view.sel.y=image.h-view.sel.h-1 end
 end
 
 function add_col()
 	if(prompt.answer) then
-		-- Add col
+		if(view.sel.x==0) then
+			image:add_col(0)
+		else
+			image:add_col(image.w)
+		end
 	end
 end
 
 function add_row()
 	if(prompt.answer) then
-		-- Add row
+		if(view.sel.y==0) then
+			image:add_row(0)
+		else
+			image:add_row(image.h)
+		end
 	end
 end
 
