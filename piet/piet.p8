@@ -7,6 +7,7 @@ function hex(n,d) return sub(tostr(n,true),5,6) end
 function packhv(hv) return hv.val+shl(hv.hue,4) end
 function unpackhv(hv) return {val=band(hv,0x0f), hue=lshr(band(hv,0xf0),4)} end
 function hashloc(loc) return tostr(loc.x).."#"..tostr(loc.y) end
+function pbtn(i) return (not prompt.just_ended and btn(i)) end
 
 function wrap(text, width)
 	local charwidth = width/4
@@ -283,7 +284,7 @@ function _update()
 		paint_mode=1-paint_mode
 		cur_color=getpx(view.sel)
 	end
-	if(not prompt.just_ended and btn(4)) then
+	if(pbtn(4)) then
 		if(edit_mode==2) then
 			-- exit edit mode
 			edit_mode=-1
