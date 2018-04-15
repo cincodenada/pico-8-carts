@@ -9,28 +9,28 @@ function unpackhv(hv) return {val=band(hv,0x0f), hue=lshr(band(hv,0xf0),4)} end
 function hashloc(loc) return tostr(loc.x).."#"..tostr(loc.y) end
 
 function wrap(text, width)
-	charwidth = width/4
+	local charwidth = width/4
 	text = text.." "
-	output = ""
-	curline = ""
-	word = ""
-	pos = 1
-	lines = 1
+	local output, curline, word = "","",""
+	local pos,lines = 1,1
 	while(pos <= #text) do
-		local curlet = sub(text,1,1)
+		local curlet = sub(text,pos,pos)
 		if(curlet == " ") then
 			if(#curline + #word > charwidth) then
 				output = output..curline.."\n"
 				curline=""
 				lines += 1
+				-- back up so we re-process the space next line
+				pos -= 1
 			elseif(#curline + #word == charwidth) then
 				output = output..curline..word.."\n"
 				curline=""
 				lines += 1
+				word = ""
 			else
 				curline = curline..word.." "
+				word = ""
 			end
-			word = ""
 		else
 			-- If we have a word that's too long, just break it
 			if(#curline == "" and #word == charwidth) then
@@ -42,20 +42,48 @@ function wrap(text, width)
 		end
 		pos += 1
 	end
+	if(curline!="") output = output..curline.."\n"
 	return {text=output, lines=lines}
 end
 
-function prompt(text)
+prompt = {
+	text = "",
+	answer = nil,
+	callback = nil,
+}
+function prompt:show(text, callback)
+	local wrapped = wrap(text, 64)
+	wrapped.text = wrapped.text.."z=yes / x=no"
+	wrapped.lines += 1
+
+	self.text = wrapped.text
+	self.halfheight = wrapped.lines*3
+	self.answer = nil
+	self.callback = callback
+end
+
+function prompt:draw()
+	if(not self:active()) return
 	view:save_camera()
-	wrapped = wrap(text, 64)
-	halfheight = wrapped.lines*3
-	rectfill(32,64-halfheight,95,64+halfheight-1,5)
-	rect(31,64-halfheight-1,96,64+halfheight,4)
-	print(wrapped.text, 32, 64-(wrapped.lines*3))
+	rectfill(32,64-self.halfheight,95,64+self.halfheight-1,5)
+	rect(31,64-self.halfheight-1,96,64+self.halfheight,4)
+	print(self.text, 32, 64-self.halfheight)
 	view:load_camera()
 end
 
-prompt_text=""
+function prompt:check()
+	if(btnp(4) or btnp(5)) then
+		self.answer = btnp(4)
+		self.text = ""
+		return true
+	end
+	return false
+end
+
+function prompt:active()
+	return (self.text!="")
+end
+
 numhues=6
 numvals=4
 colormap={
@@ -220,6 +248,12 @@ edit_mode=0
 fake_state = {dp=0, cc=-1}
 
 function _update()
+	if(prompt:active()) then
+		if(prompt:check()) prompt.callback()
+		-- don't respond to input while prompting
+		return
+	end
+
 	if(btnp(4)) fake_state.dp = (fake_state.dp + 1)%4
 	if(btnp(5)) fake_state.cc = -fake_state.cc
 
@@ -242,7 +276,7 @@ function _update()
 			edit_mode=-1
 		elseif(edit_mode==0) then
 			-- enter selection edit mode
-			view.push_sel()
+			view:push_sel()
 			edit_mode=1
 		end
 	else
@@ -304,8 +338,8 @@ function _update()
 		if(btnp(3)) view.sel.y+=1
 
 		-- image limits
-		if(view.sel.x < 0) prompt_text="Do you want to add a column?" view.sel.x=0
-		if(view.sel.y < 0) prompt_text="Do you want to add a row?" view.sel.y=0
+		if(view.sel.x < 0) prompt:show("do you want to add a column?", add_col) view.sel.x=0
+		if(view.sel.y < 0) prompt:show("do you want to add a row?", add_row) view.sel.y=0
 		if(view.sel.x >= imw) view.sel.x=imw-1
 		if(view.sel.y >= imh) view.sel.y=imh-1
 
@@ -319,6 +353,18 @@ function _update()
 	
 	if(view.sel.x+view.sel.w>imw-1) then view.sel.x=imw-view.sel.w-1 end
 	if(view.sel.y+view.sel.h>imh-1) then view.sel.y=imh-view.sel.h-1 end
+end
+
+function add_col()
+	if(prompt.answer) then
+		-- Add col
+	end
+end
+
+function add_row()
+	if(prompt.answer) then
+		-- Add row
+	end
 end
 
 function _draw()
@@ -345,9 +391,7 @@ function _draw()
 	draw_frame(view.sel,view:gridsize(),framecolor)
 	if(edit_mode == 3) draw_pointer(view.sel,view:gridsize(),pcolor)
 
-	if(prompt_text!="") then
-		prompt(prompt_text)
-	end
+	prompt:draw()
 end
 
 ---
