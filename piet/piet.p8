@@ -572,7 +572,8 @@ function palette:draw()
 	end
 
 	if(edit_mode == 3) then
-		print(output, 0, self.top, 7)
+		wrapped = wrap(output, self.wing_width)
+		print(wrapped.text, 0, self.top+1, 7)
 		self:draw_stack()
 	end
 
@@ -1053,6 +1054,9 @@ function step()
 		end
 	elseif(op == "cout") then
 		output = output..chr(stack[#stack])
+		stack[#stack] = nil
+	elseif(op == "#out") then
+		output = output..stack[#stack]
 		stack[#stack] = nil
 	elseif(op == "roll") then
 		local rolls = stack:pop()
