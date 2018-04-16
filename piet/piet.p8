@@ -76,7 +76,14 @@ local solidpat=0x0000
 local midpat=0xa5a5
 
 local cur_color={val=3, hue=1}
+-- 0 = not editing
+-- 1 = changing selection
+-- 2 = editing colors
+-- 3 = running
+local edit_mode=0
 local paint_mode=0
+
+local fake_state = {dp=0, cc=-1}
 
 ---
 -->8
@@ -135,6 +142,13 @@ end
 -- Object declarations
 ------------------------
 
+local state = {x=0, y=0, dp=0, cc=-1, toggle=0, attempts=0}
+local stack = {}
+local output = ""
+local max_block = {x=nil,y=nil}
+
+local next_loop = {funcs = {}}
+
 -- Stored in sprite + aux data
 -- 128x128 pixels (2 per byte)
 -- 64x128 bytes
@@ -168,13 +182,6 @@ local palette = {
 	pxsize = 4,
 	top = 0,
 }
-
-local state = {x=0, y=0, dp=0, cc=-1, toggle=0, attempts=0}
-local stack = {}
-local output = ""
-local max_block = {x=nil,y=nil}
-
-local next_loop = {funcs = {}}
 
 
 -------------------------
@@ -627,14 +634,6 @@ palette:init()
 -- view:init() must be after palette:init()
 -- so it knows how much space to leave
 view:init()
-
--- 0 = not editing
--- 1 = changing selection
--- 2 = editing colors
--- 3 = running
-local edit_mode=0
-
-local fake_state = {dp=0, cc=-1}
 
 menuitem(1, "run program", function() state:reset() edit_mode=3 end)
 menuitem(2, "save program", function() image:save() end)
