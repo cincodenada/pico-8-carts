@@ -72,6 +72,12 @@ local funcmap={
 	'cin','#out','cout'
 }
 
+local solidpat=0x0000
+local midpat=0xa5a5
+
+local cur_color={val=3, hue=1}
+local paint_mode=0
+
 ---
 -->8
 -- generate pico-8 color <-> hv lookup tables
@@ -571,12 +577,6 @@ function palette:draw_funcs()
 		end
 	end
 end
-
-local solidpat=0x0000
-local midpat=0xa5a5
-
-local paint_mode=0
-local cur_color={val=3, hue=1}
 
 cartdata('cincodenada_piet')
 --image:load(0x0000, 64, 64, 2, 64)
