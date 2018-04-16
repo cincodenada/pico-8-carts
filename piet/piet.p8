@@ -464,7 +464,32 @@ function view:gridsize() return self.pxsize+2 end
 function view:gridwidth() return flr(128/(view:gridsize())) end
 function view:push_sel() self.prevsel = tcopy(self.sel) end
 function view:set_sel(x,y) self.sel.x = x self.sel.y = y end
-function view:inc_sel(x,y) self.sel.x += x self.sel.y += y end
+function view:inc_sel(x,y) self:set_sel(self.sel.x+x,self.sel.y+y) end
+-- Ensure sel is on nicely on screen
+function view:recenter()
+	-- Deal with sel size
+	if(self.sel.w<0) self.sel.w=0
+	if(self.sel.h<0) self.sel.h=0
+
+	if(self.sel.w>image.w-1) self.sel.w=image.w-1
+	if(self.sel.h>image.h-1) self.sel.h=image.h-1
+
+	if(self.sel.x+self.sel.w>image.w-1) then self.sel.x=image.w-self.sel.w-1 end
+	if(self.sel.y+self.sel.h>image.h-1) then self.sel.y=image.h-self.sel.h-1 end
+	--
+	-- image limits
+	if(self.sel.x < 0) prompt:show("do you want to add a column?", add_col) self.sel.x=0
+	if(self.sel.y < 0) prompt:show("do you want to add a row?", add_row) self.sel.y=0
+	if(self.sel.x >= image.w) prompt:show("do you want to add a column?", add_col) self.sel.x=image.w-1
+	if(self.sel.y >= image.h) prompt:show("do you want to add a row?", add_row) self.sel.y=image.h-1
+
+	-- view limits
+	-- only one of these can happen at a time since we only move orthogonally
+	if(self.sel.x >= self.nw.x+self:gridwidth()-1) self:set(self.sel.x-self:gridwidth()+1, self.nw.y)
+	if(self.sel.y >= self.nw.y+self:gridwidth()-1) self:set(self.nw.x, self.sel.y-self:gridwidth()+1)
+	if(self.sel.x < self.nw.x) self:set(self.sel.x, self.nw.y)
+	if(self.sel.y < self.nw.y) self:set(self.nw.x,self.sel.y)
+end
 function view:reset()
 	self.sel = mksel(0,0)
 	camera()
@@ -676,34 +701,14 @@ function _update()
 		if(btnp(1)) view.sel.w+=1
 		if(btnp(2)) view.sel.h-=1
 		if(btnp(3)) view.sel.h+=1
-
-		if(view.sel.w<0) view.sel.w=0
-		if(view.sel.h<0) view.sel.h=0
-
-		if(view.sel.w>image.w-1) view.sel.w=image.w-1
-		if(view.sel.h>image.h-1) view.sel.h=image.h-1
 	elseif (edit_mode==0) then
 		if(btnp(0)) view.sel.x-=1
 		if(btnp(1)) view.sel.x+=1
 		if(btnp(2)) view.sel.y-=1
 		if(btnp(3)) view.sel.y+=1
-
-		-- image limits
-		if(view.sel.x < 0) prompt:show("do you want to add a column?", add_col) view.sel.x=0
-		if(view.sel.y < 0) prompt:show("do you want to add a row?", add_row) view.sel.y=0
-		if(view.sel.x >= image.w) prompt:show("do you want to add a column?", add_col) view.sel.x=image.w-1
-		if(view.sel.y >= image.h) prompt:show("do you want to add a row?", add_row) view.sel.y=image.h-1
-
-		-- view limits
-		-- only one of these can happen at a time since we only move orthogonally
-		if(view.sel.x >= view.nw.x+view:gridwidth()-1) view:set(view.sel.x-view:gridwidth()+1, view.nw.y)
-		if(view.sel.y >= view.nw.y+view:gridwidth()-1) view:set(view.nw.x, view.sel.y-view:gridwidth()+1)
-		if(view.sel.x < view.nw.x) view:set(view.sel.x, view.nw.y)
-		if(view.sel.y < view.nw.y) view:set(view.nw.x,view.sel.y)
 	end
-	
-	if(view.sel.x+view.sel.w>image.w-1) then view.sel.x=image.w-view.sel.w-1 end
-	if(view.sel.y+view.sel.h>image.h-1) then view.sel.y=image.h-view.sel.h-1 end
+
+	view:recenter()
 end
 
 function add_col(doit)
