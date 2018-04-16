@@ -460,8 +460,16 @@ end
 
 ---
 -->8
+function view:init()
+	self.size[2] = palette.top
+end
 function view:gridsize() return self.pxsize+2 end
-function view:gridwidth() return flr(128/(view:gridsize())) end
+function view:pxdim()
+	return {
+		x=ceil(self.size[1]/(view:gridsize())),
+		y=ceil(self.size[2]/(view:gridsize()))
+	}
+end
 function view:push_sel() self.prevsel = tcopy(self.sel) end
 function view:set_sel(x,y) self.sel.x = x self.sel.y = y end
 function view:inc_sel(x,y) self:set_sel(self.sel.x+x,self.sel.y+y) end
@@ -485,10 +493,12 @@ function view:recenter()
 
 	-- view limits
 	-- only one of these can happen at a time since we only move orthogonally
-	if(self.sel.x >= self.nw.x+self:gridwidth()-1) self:set(self.sel.x-self:gridwidth()+1, self.nw.y)
-	if(self.sel.y >= self.nw.y+self:gridwidth()-1) self:set(self.nw.x, self.sel.y-self:gridwidth()+1)
-	if(self.sel.x < self.nw.x) self:set(self.sel.x, self.nw.y)
-	if(self.sel.y < self.nw.y) self:set(self.nw.x,self.sel.y)
+	local px = self:pxdim()
+	-- TODO: Don't depend on set() to sanity check us here, it's wasteful
+	if(self.sel.x >= self.nw.x+ceil(px.x*0.75)) self:set(self.sel.x-ceil(px.x*0.75), self.nw.y)
+	if(self.sel.y >= self.nw.y+ceil(px.y*0.75)) self:set(self.nw.x, self.sel.y-ceil(px.y*0.75))
+	if(self.sel.x < self.nw.x+flr(px.x*0.25)) self:set(self.sel.x-flr(px.x*0.25), self.nw.y)
+	if(self.sel.y < self.nw.y+flr(px.y*0.25)) self:set(self.nw.x,self.sel.y-flr(px.y*0.25))
 end
 function view:reset()
 	self.sel = mksel(0,0)
@@ -498,7 +508,15 @@ function view:reset()
 end
 function view:save_camera() add(self.cameras, peek4(0x5f28)) camera() end
 function view:load_camera() poke4(0x5f28, self.cameras[#self.cameras]) self.cameras[#self.cameras] = nil end
-function view:set(x,y) self.nw = {x=x,y=y} camera(x*view:gridsize(), y*view:gridsize()) end
+function view:set(x,y)
+	-- Sanity checks
+	if(x < 0 or y < 0) return false
+	if(x+self:pxdim().x > image.w) return false
+	if(y+self:pxdim().y > image.h) return false
+
+	self.nw = {x=x,y=y}
+	camera(x*view:gridsize(), y*view:gridsize())
+end
 
 function palette:init()
 	-- 2 char on each side
@@ -508,18 +526,17 @@ function palette:init()
 	-- plus 1px padding/side
 	self.tot_h=numvals*self.pxsize+4*6+2
 	self.wing_width = flr((128-self.tot_w)/2-1)
+
+	self.top = 128-self.tot_h
+
+	self.offx=128/2-(numhues*self.pxsize/2)
+	self.offy=self.top + self.tot_h/2 - (numvals*self.pxsize/2)
 end
 function palette:draw()
 	view:save_camera()
 
-	if (view.sel.y > 128/view:gridsize()/2) then
-		self.top = 0
-	else
-		self.top = 128-self.tot_h
-	end
-
-	self.offx=128/2-(numhues*self.pxsize/2)
-	self.offy=self.top + self.tot_h/2 - (numvals*self.pxsize/2)
+	-- Debug goes here to take advantage of camera reset
+	print(view.sel.x.."x"..view.sel.y.."+"..view.nw.x.."x"..view.nw.y,0,0,7)
 
 	local bgcolor=5
 	if(paint_mode > 0) bgcolor=4
@@ -607,6 +624,9 @@ cartdata('cincodenada_piet')
 --image:load(0x0000, 64, 64, 2, 64)
 image:init()
 palette:init()
+-- view:init() must be after palette:init()
+-- so it knows how much space to leave
+view:init()
 
 -- 0 = not editing
 -- 1 = changing selection
@@ -733,16 +753,14 @@ end
 
 function _draw()
 	cls()
-	for x=view.nw.x,view.nw.x+view:gridwidth()-1 do
-		for y=view.nw.y,view.nw.y+view:gridwidth()-1 do
+	for x=view.nw.x,view.nw.x+view:pxdim().x-1 do
+		for y=view.nw.y,view.nw.y+view:pxdim().y-1 do
 			draw_px(mksel(x,y))
 		end
 	end
 	if(paint_mode==1) then
 		draw_px(view.sel,cur_color)
 	end
-
-	print(view.sel.x.."x"..view.sel.y.."+"..view.nw.x.."x"..view.nw.y,7)
 
 	palette:draw()
 	
