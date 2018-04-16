@@ -215,12 +215,80 @@ function image:set_size(w,h)
 	self.h=h
 end
 
-function image:resize()
-	prompt:show("resize image\
-	left:   <0>\
-	right:  <0>\
-	top:    <0>\
-	bottom: <0>")
+function image:resize(doit)
+	if(doit and prompt:active()) then
+		self:do_resize(self.resize_vals)
+	else
+		prompt:show("", function(doit) image:resize(doit) end)
+		self.resize_vals = {0,0,0,0}
+		self.cur_resize = 0
+		prompt.update_callback = function(p) self:update_resize(p) end
+		self:update_resize(nil)
+	end
+end
+
+function image:update_resize(pressed)
+	if(pressed == 0) then
+		self.resize_vals[self.cur_resize+1] -= 1
+	elseif(pressed == 1) then
+		self.resize_vals[self.cur_resize+1] += 1
+	elseif(pressed == 2) then
+		self.cur_resize -=1
+	elseif(pressed == 3) then
+		self.cur_resize +=1
+	end
+	self.cur_resize %= 4
+	local resize_text = {
+		"left:   ",
+		"right:  ",
+		"top:    ",
+		"bottom: "
+	}
+		
+	p = "resize image\n"
+	for i=1,4 do
+		if(i == self.cur_resize+1) then
+			p = p..resize_text[i]..">"..self.resize_vals[i].."<\n"
+		else
+			p = p..resize_text[i].."<"..self.resize_vals[i]..">\n"
+		end
+	end
+	prompt:set_text(p)
+end
+
+function image:do_resize(dims)
+	-- dims = l r t b
+	new_w = self.w + dims[1] + dims[2]
+	new_h = self.h + dims[3] + dims[4]
+	if(not self:will_fit(new_w, new_h)) return false
+	-- TODO: Confirm destroying non-bw data
+	-- For now, just read into RAM
+	local imgdata = {}
+	for y=0,self.h-1 do
+		imgdata[y] = {}
+		for x=0,self.w-1 do
+			-- TODO: Use bigger copy functions
+			imgdata[y][x] = image:get(x,y)
+		end
+	end
+
+	local od = {self.w,self.h}
+	self:set_size(new_w,new_h)
+
+	local black = packhv({hue=5,val=3})
+	dx = -dims[1]
+	dy = -dims[3]
+	for y=0,self.h-1 do
+		for x=0,self.w-1 do
+			if(x<dims[1] or y<dims[3]) then
+				image:set(x,y,black)
+			elseif(x+dx>=od[1] or y+dy>=od[2]) then
+				image:set(x,y,black)
+			else
+				image:set(x,y,imgdata[y+dy][x+dx])
+			end
+		end
+	end
 end
 
 function image:add_row(before)
@@ -299,13 +367,17 @@ end
 
 function pbtn(i) return (not prompt.just_ended and btn(i)) end
 function prompt:show(text, callback)
+	self:set_text(text)
+	self.callback = callback
+end
+
+function prompt:set_text(text)
 	local wrapped = wrap(text, 62)
 	wrapped.text = wrapped.text.."z=yes / x=no"
 	wrapped.lines += 1
 
 	self.text = wrapped.text
 	self.halfheight = wrapped.lines*3
-	self.callback = callback
 end
 
 function prompt:draw()
@@ -319,8 +391,8 @@ end
 
 function prompt:check()
 	if(btnp(4) or btnp(5)) then
-		self.text = ""
 		self.callback(btnp(4))
+		self.text = ""
 		self.callback = nil
 		self.update_callback = nil
 		self.just_ended = true
