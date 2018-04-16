@@ -710,10 +710,10 @@ function _update()
 			
 			image:setpx(view.sel,px)
 		else
-			if(btnp(0)) view.inc_sel(-1,0)
-			if(btnp(1)) view.inc_sel(1,0)
-			if(btnp(2)) view.inc_sel(0,-1)
-			if(btnp(3)) view.inc_sel(0,1)
+			if(btnp(0)) view:inc_sel(-1,0)
+			if(btnp(1)) view:inc_sel(1,0)
+			if(btnp(2)) view:inc_sel(0,-1)
+			if(btnp(3)) view:inc_sel(0,1)
 
 			image:setpx(view.sel,cur_color)
 		end
