@@ -1070,6 +1070,7 @@ function step()
 
 	state = future
 	view:set_sel(state.x, state.y)
+	view:recenter()
 end
 
 function get_val(px)
