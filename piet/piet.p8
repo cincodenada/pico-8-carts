@@ -31,6 +31,17 @@ function wrap(text, width)
 				curline = curline..word.." "
 				word = ""
 			end
+		elseif(curlet == "\n") then
+			if(#curline + #word > charwidth) then
+				output = output..curline.."\n"
+				lines+=1
+				output = output..word.."\n"
+			else
+				output = output..curline..word.."\n"
+			end
+			curline=""
+			word=""
+			lines+=1
 		else
 			-- If we have a word that's too long, just break it
 			if(#curline == "" and #word == charwidth) then
@@ -294,7 +305,6 @@ function prompt:show(text, callback)
 
 	self.text = wrapped.text
 	self.halfheight = wrapped.lines*3
-	self.answer = nil
 	self.callback = callback
 end
 
@@ -309,13 +319,18 @@ end
 
 function prompt:check()
 	if(btnp(4) or btnp(5)) then
-		self.answer = btnp(4)
 		self.text = ""
-		self.callback()
-		self.answer = nil
+		self.callback(btnp(4))
 		self.callback = nil
+		self.update_callback = nil
 		self.just_ended = true
 		return true
+	elseif(self.update_callback) then
+		local pressed = nil
+		for b=0,3 do
+			if(btnp(b)) pressed = b break
+		end
+		if(pressed) self.update_callback(pressed)
 	end
 	return false
 end
@@ -373,7 +388,8 @@ local edit_mode=0
 local fake_state = {dp=0, cc=-1}
 
 menuitem(1, "run program", function() state:reset() edit_mode=3 end)
-menuitem(2, "save image", function() image:save() end)
+menuitem(2, "save program", function() image:save() end)
+menuitem(3, "resize program", function() image:resize() end)
 
 function _update()
 	if(prompt:active()) then
@@ -484,8 +500,8 @@ function _update()
 	if(view.sel.y+view.sel.h>image.h-1) then view.sel.y=image.h-view.sel.h-1 end
 end
 
-function add_col()
-	if(prompt.answer) then
+function add_col(doit)
+	if(doit) then
 		if(view.sel.x==0) then
 			image:add_col(0)
 		else
@@ -494,8 +510,8 @@ function add_col()
 	end
 end
 
-function add_row()
-	if(prompt.answer) then
+function add_row(doit)
+	if(doit) then
 		if(view.sel.y==0) then
 			image:add_row(0)
 		else
