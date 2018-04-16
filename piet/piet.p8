@@ -8,6 +8,17 @@ function packhv(hv) return hv.val+shl(hv.hue,4) end
 function unpackhv(hv) return {val=band(hv,0x0f), hue=lshr(band(hv,0xf0),4)} end
 function hashloc(loc) return tostr(loc.x).."#"..tostr(loc.y) end
 
+function printbig(val)
+	local s = ""
+	local v = abs(val)
+	repeat
+		s = shl(v % 0x0.000a, 16)..s
+		v /= 10
+	until (v==0)
+	if (val<0) s = "-"..s
+	return s
+end
+
 function wrap(text, width)
 	local charwidth = width/4
 	text = text.." "
@@ -587,9 +598,10 @@ function palette:draw_stack()
 		x = left
 		while true do
 			if(sp==0) break
-			local numlen = #tostr(stack[sp])
+			local numstr = printbig(stack[sp])
+			local numlen = #tostr(numstr)
 			if(x+numlen*4 < 128) then
-				print(stack[sp], x, self.top+1+r*6)
+				print(numstr, x, self.top+1+r*6)
 				x += numlen*4 + 2
 				sp-=1
 			else
@@ -1033,7 +1045,7 @@ function step()
 	end
 
 	if(op == "push") then
-		stack:push(future.last_value)
+		stack:push(shr(future.last_value,16))
 	elseif(op == "pop") then
 		stack:pop()
 	elseif(op == "dup") then
@@ -1046,22 +1058,22 @@ function step()
 		stack[#stack] -= top
 	elseif(op == "mul") then
 		local top = stack:pop()
-		stack[#stack] *= top
+		stack[#stack] = shl(top,8)*shl(stack[#stack],8)
 	elseif(op == "div") then
 		local top = stack:pop()
 		if(top>0) then
-			stack[#stack] = flr(stack[#stack]/top)
+			stack[#stack] = shr(stack[#stack]/top,16)
 		end
 	elseif(op == "cout") then
-		output = output..chr(stack[#stack])
+		output = output..chr(shl(stack[#stack],16))
 		stack[#stack] = nil
 	elseif(op == "#out") then
-		output = output..stack[#stack]
+		output = output..printbig(stack[#stack])
 		stack[#stack] = nil
 	elseif(op == "roll") then
-		local rolls = stack:pop()
+		local rolls = shl(stack:pop(),16)
 		-- Easier on my brain to work with depth-1
-		local depth = stack:pop()-1
+		local depth = shl(stack:pop(),16)-1
 		if(depth > 0 and depth <= #stack) then
 			if(rolls < 0) then
 				local dir = -1
