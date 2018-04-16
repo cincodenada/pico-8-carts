@@ -162,10 +162,22 @@ local stack = {}
 local output = ""
 local max_block = {x=nil,y=nil}
 
+local next_loop = {funcs = {}}
+
 
 -------------------------
 -- Object methods
 -------------------------
+function next_loop:append(func)
+	add(self.funcs, func)
+end
+function next_loop:run()
+	for f in all(self.funcs) do
+		f()
+	end
+	self.funcs = {}
+end
+
 function image:get(x,y)
 	return peek(y*self.w+x)
 end
@@ -217,7 +229,8 @@ end
 
 function image:resize(doit)
 	if(doit and prompt:active()) then
-		self:do_resize(self.resize_vals)
+		local success = self:do_resize(self.resize_vals)
+		if(not success) next_loop:append(function() prompt:show("image too big!") end)
 	else
 		prompt:show("", function(doit) image:resize(doit) end)
 		self.resize_vals = {0,0,0,0}
@@ -247,10 +260,13 @@ function image:update_resize(pressed)
 		
 	p = "resize image\n"
 	for i=1,4 do
+		np=""
+		if(self.resize_vals[i] > 0) np="+"
+
 		if(i == self.cur_resize+1) then
-			p = p..resize_text[i]..">"..self.resize_vals[i].."<\n"
+			p = p..resize_text[i]..">"..np..self.resize_vals[i].."<\n"
 		else
-			p = p..resize_text[i].."<"..self.resize_vals[i]..">\n"
+			p = p..resize_text[i].."<"..np..self.resize_vals[i]..">\n"
 		end
 	end
 	prompt:set_text(p)
@@ -289,6 +305,8 @@ function image:do_resize(dims)
 			end
 		end
 	end
+
+	return true
 end
 
 function image:add_row(before)
@@ -367,13 +385,17 @@ end
 
 function pbtn(i) return (not prompt.just_ended and btn(i)) end
 function prompt:show(text, callback)
-	self:set_text(text)
 	self.callback = callback
+	self:set_text(text)
 end
 
 function prompt:set_text(text)
 	local wrapped = wrap(text, 62)
-	wrapped.text = wrapped.text.."z=yes / x=no"
+	if(self.callback) then
+		wrapped.text = wrapped.text.."z=yes / x=no"
+	else
+		wrapped.text = wrapped.text.."z to dismiss"
+	end
 	wrapped.lines += 1
 
 	self.text = wrapped.text
@@ -391,7 +413,7 @@ end
 
 function prompt:check()
 	if(btnp(4) or btnp(5)) then
-		self.callback(btnp(4))
+		if(self.callback) self.callback(btnp(4))
 		self.text = ""
 		self.callback = nil
 		self.update_callback = nil
@@ -464,6 +486,8 @@ menuitem(2, "save program", function() image:save() end)
 menuitem(3, "resize program", function() image:resize() end)
 
 function _update()
+	next_loop:run()
+
 	if(prompt:active()) then
 		prompt:check()
 		-- don't respond to input while prompting
