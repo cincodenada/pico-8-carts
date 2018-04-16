@@ -61,8 +61,6 @@ local funcmap={
 	'cin','#out','cout'
 }
 
-local max_block = {x=nil,y=nil}
-
 ---
 -->8
 -- generate pico-8 color <-> hv lookup tables
@@ -116,6 +114,10 @@ function teq(a,b)
 	return true
 end
 
+------------------------
+-- Object declarations
+------------------------
+
 -- Stored in sprite + aux data
 -- 128x128 pixels (2 per byte)
 -- 64x128 bytes
@@ -129,6 +131,30 @@ local image = {
 	max_w=64,
 	max_h=128,
 }
+
+local prompt = {
+	text = "",
+	callback = nil,
+	update_callback = nil,
+	just_ended = false,
+}
+
+local view = {
+	nw = {x=0,y=0},
+	pxsize = 2,
+	sel = mksel(0,0),
+	cameras = {},
+}
+
+local state = {x=0, y=0, dp=0, cc=-1, toggle=0, attempts=0}
+local stack = {}
+local output = ""
+local max_block = {x=nil,y=nil}
+
+
+-------------------------
+-- Object methods
+-------------------------
 function image:get(x,y)
 	return peek(y*self.w+x)
 end
@@ -176,6 +202,14 @@ function image:set_size(w,h)
 	poke(0x3001,h)
 	self.w=w
 	self.h=h
+end
+
+function image:resize()
+	prompt:show("resize image\
+	left:   <0>\
+	right:  <0>\
+	top:    <0>\
+	bottom: <0>")
 end
 
 function image:add_row(before)
@@ -252,12 +286,6 @@ function image:setpx(sel,px)
 	end
 end
 
-local prompt = {
-	text = "",
-	answer = nil,
-	callback = nil,
-	just_ended = false,
-}
 function pbtn(i) return (not prompt.just_ended and btn(i)) end
 function prompt:show(text, callback)
 	local wrapped = wrap(text, 62)
@@ -311,12 +339,6 @@ end
 
 ---
 -->8
-local view = {
-	nw = {x=0,y=0},
-	pxsize = 2,
-	sel = mksel(0,0),
-	cameras = {},
-}
 function view:gridsize() return self.pxsize+2 end
 function view:gridwidth() return flr(128/(view:gridsize())) end
 function view:push_sel() self.prevsel = tcopy(self.sel) end
@@ -332,67 +354,11 @@ function view:save_camera() add(self.cameras, peek4(0x5f28)) camera() end
 function view:load_camera() poke4(0x5f28, self.cameras[#self.cameras]) self.cameras[#self.cameras] = nil end
 function view:set(x,y) self.nw = {x=x,y=y} camera(x*view:gridsize(), y*view:gridsize()) end
 
-local prompt = {
-	text = "",
-	answer = nil,
-	callback = nil,
-	just_ended = false,
-}
-function pbtn(i) return (not prompt.just_ended and btn(i)) end
-function prompt:show(text, callback)
-	local wrapped = wrap(text, 62)
-	wrapped.text = wrapped.text.."z=yes / x=no"
-	wrapped.lines += 1
-
-	self.text = wrapped.text
-	self.halfheight = wrapped.lines*3
-	self.answer = nil
-	self.callback = callback
-end
-
-function prompt:draw()
-	if(not self:active()) return
-	view:save_camera()
-	rectfill(32,64-self.halfheight,95,64+self.halfheight,5)
-	rect(31,64-self.halfheight-1,96,64+self.halfheight+1,4)
-	print(self.text, 33, 64-self.halfheight+1)
-	view:load_camera()
-end
-
-function prompt:check()
-	if(btnp(4) or btnp(5)) then
-		self.answer = btnp(4)
-		self.text = ""
-		self.callback()
-		self.answer = nil
-		self.callback = nil
-		self.just_ended = true
-		return true
-	end
-	return false
-end
-
--- Clear button pressed once they're released
-function prompt:update_buttons()
-	if(not btn(4) and not btn(5)) then
-		self.just_ended = false
-	end
-end
-
-function prompt:active()
-	return (self.text!="")
-end
-
 local solidpat=0x0000
 local midpat=0xa5a5
 
 local paint_mode=0
 local cur_color={val=3, hue=1}
-
--- running variables
-local state = {x=0, y=0, dp=0, cc=-1, toggle=0, attempts=0}
-local stack = {}
-local output = ""
 
 cartdata('cincodenada_piet')
 --image:load(0x0000, 64, 64, 2, 64)
