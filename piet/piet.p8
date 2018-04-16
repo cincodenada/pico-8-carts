@@ -547,6 +547,8 @@ function palette:draw()
 
 	local bgcolor=5
 	if(paint_mode > 0) bgcolor=4
+	-- Clear background
+	rectfill(0, self.top, 128, 128, 0)
 	rectfill(
 		128/2-self.tot_w/2,
 		self.top,
@@ -570,7 +572,7 @@ function palette:draw()
 	end
 
 	if(edit_mode == 3) then
-		print(output, 0, self.top)
+		print(output, 0, self.top, 7)
 		self:draw_stack()
 	end
 
@@ -586,7 +588,7 @@ function palette:draw_stack()
 			if(sp==0) break
 			local numlen = #tostr(stack[sp])
 			if(x+numlen*4 < 128) then
-				print(stack[sp], x, top+r*6)
+				print(stack[sp], x, self.top+1+r*6)
 				x += numlen*4 + 2
 				sp-=1
 			else
