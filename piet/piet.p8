@@ -54,7 +54,7 @@ function wrap(text, width)
 			word=""
 			lines+=1
 		else
-			-- If we have a word that's too long, just break it
+			-- if we have a word that's too long, just break it
 			if(#curline == "" and #word == charwidth) then
 				output = output..#word.."\n"
 				word=""
@@ -96,7 +96,7 @@ local paint_mode=0
 
 local fake_state = {dp=0, cc=-1}
 
----
+---	
 -->8
 -- generate pico-8 color <-> hv lookup tables
 local col2hv = {}
@@ -150,7 +150,7 @@ function teq(a,b)
 end
 
 ------------------------
--- Object declarations
+-- object declarations
 ------------------------
 
 local state = {x=0, y=0, dp=0, cc=-1, toggle=0, attempts=0}
@@ -160,11 +160,11 @@ local max_block = {x=nil,y=nil}
 
 local next_loop = {funcs = {}}
 
--- Stored in sprite + aux data
+-- stored in sprite + aux data
 -- 128x128 pixels (2 per byte)
 -- 64x128 bytes
 -- plus map-only data of 128x32
--- For a total of 128x96 bytes
+-- for a total of 128x96 bytes
 local image = {
 	w=64,
 	h=64,
@@ -196,7 +196,7 @@ local palette = {
 
 
 -------------------------
--- Object methods
+-- object methods
 -------------------------
 function next_loop:append(func)
 	add(self.funcs, func)
@@ -250,7 +250,7 @@ function image:will_fit(w,h)
 end
 
 function image:set_size(w,h)
-	-- Doesn't do any resizing of data!
+	-- doesn't do any resizing of data!
 	poke(0x3000,w)
 	poke(0x3001,h)
 	self.w=w
@@ -294,9 +294,9 @@ function image:update_resize(pressed)
 		if(self.resize_vals[i] > 0) np="+"
 
 		if(i == self.cur_resize+1) then
-			p = p..resize_text[i]..">"..np..self.resize_vals[i].."<\n"
+			p = p..resize_text[i].."➡️"..np..self.resize_vals[i].."⬅️\n"
 		else
-			p = p..resize_text[i].."<"..np..self.resize_vals[i]..">\n"
+			p = p..resize_text[i].."⬅️"..np..self.resize_vals[i].."➡️\n"
 		end
 	end
 	prompt:set_text(p)
@@ -307,13 +307,13 @@ function image:do_resize(dims)
 	new_w = self.w + dims[1] + dims[2]
 	new_h = self.h + dims[3] + dims[4]
 	if(not self:will_fit(new_w, new_h)) return false
-	-- TODO: Confirm destroying non-bw data
-	-- For now, just read into RAM
+	-- todo: confirm destroying non-bw data
+	-- for now, just read into ram
 	local imgdata = {}
 	for y=0,self.h-1 do
 		imgdata[y] = {}
 		for x=0,self.w-1 do
-			-- TODO: Use bigger copy functions
+			-- todo: use bigger copy functions
 			imgdata[y][x] = image:get(x,y)
 		end
 	end
@@ -341,12 +341,12 @@ end
 
 function image:add_row(before)
 	if(not self:will_fit(self.w, self.h+1)) return false
-	-- For now, just read into RAM
+	-- for now, just read into ram
 	local imgdata = {}
 	for y=0,self.h-1 do
 		imgdata[y] = {}
 		for x=0,self.w-1 do
-			-- TODO: Use bigger copy functions
+			-- todo: use bigger copy functions
 			imgdata[y][x] = image:get(x,y)
 		end
 	end
@@ -369,12 +369,12 @@ end
 
 function image:add_col(before)
 	if(not self:will_fit(self.w, self.h+1)) return false
-	-- For now, just read into RAM
+	-- for now, just read into ram
 	local imgdata = {}
 	for y=0,self.h-1 do
 		imgdata[y] = {}
 		for x=0,self.w-1 do
-			-- TODO: Use bigger copy functions
+			-- todo: use bigger copy functions
 			imgdata[y][x] = image:get(x,y)
 		end
 	end
@@ -459,7 +459,7 @@ function prompt:check()
 	return false
 end
 
--- Clear button pressed once they're released
+-- clear button pressed once they're released
 function prompt:update_buttons()
 	if(not btn(4) and not btn(5)) then
 		self.just_ended = false
@@ -491,9 +491,9 @@ end
 function view:push_sel() self.prevsel = tcopy(self.sel) end
 function view:set_sel(x,y) self.sel.x = x self.sel.y = y end
 function view:inc_sel(x,y) self:set_sel(self.sel.x+x,self.sel.y+y) end
--- Ensure sel is on nicely on screen
+-- ensure sel is on nicely on screen
 function view:recenter()
-	-- Deal with sel size
+	-- deal with sel size
 	if(self.sel.w<0) self.sel.w=0
 	if(self.sel.h<0) self.sel.h=0
 
@@ -512,7 +512,7 @@ function view:recenter()
 	-- view limits
 	-- only one of these can happen at a time since we only move orthogonally
 	local px = self:pxdim()
-	-- TODO: Don't depend on set() to sanity check us here, it's wasteful
+	-- todo: don't depend on set() to sanity check us here, it's wasteful
 	if(self.sel.x >= self.nw.x+ceil(px.x*0.75)) self:set(self.sel.x-ceil(px.x*0.75), self.nw.y)
 	if(self.sel.y >= self.nw.y+ceil(px.y*0.75)) self:set(self.nw.x, self.sel.y-ceil(px.y*0.75))
 	if(self.sel.x < self.nw.x+flr(px.x*0.25)) self:set(self.sel.x-flr(px.x*0.25), self.nw.y)
@@ -527,7 +527,7 @@ end
 function view:save_camera() add(self.cameras, peek4(0x5f28)) camera() end
 function view:load_camera() poke4(0x5f28, self.cameras[#self.cameras]) self.cameras[#self.cameras] = nil end
 function view:set(x,y)
-	-- Sanity checks
+	-- sanity checks
 	if(x < 0 or y < 0) return false
 	if(x+self:pxdim().x > image.w) return false
 	if(y+self:pxdim().y > image.h) return false
@@ -553,12 +553,12 @@ end
 function palette:draw()
 	view:save_camera()
 
-	-- Debug goes here to take advantage of camera reset
+	-- debug goes here to take advantage of camera reset
 	print(view.sel.x.."x"..view.sel.y.."+"..view.nw.x.."x"..view.nw.y,0,0,7)
 
 	local bgcolor=5
 	if(paint_mode > 0) bgcolor=4
-	-- Clear background
+	-- clear background
 	rectfill(0, self.top, 128, 128, 0)
 	rectfill(
 		128/2-self.tot_w/2,
@@ -577,7 +577,7 @@ function palette:draw()
 	self.curhv = image:getpx(view.sel)
 	draw_dot(mksel(self.curhv.hue,self.curhv.val),self.pxsize,5,self.offx,self.offy)
 
-	-- No funcs from black/white blocks
+	-- no funcs from black/white blocks
 	if(self.curhv.val!=numvals-1) then
 		self:draw_funcs()
 	end
@@ -954,22 +954,22 @@ function max_block:check(check)
 		if check[a] == self[a] then
 			-- continue
 		elseif sgn(check[a] - self[a]) == self.info.dirs[i] then
-			-- Make sure to push out the primary axis
+			-- make sure to push out the primary axis
 			-- if we're not equivalent
 			self.x = check.x
 			self.y = check.y
 		else
-			-- If neither of the above, we're chopped liver
+			-- if neither of the above, we're chopped liver
 			return
 		end
 	end
-	-- If we made it here, we're better
+	-- if we made it here, we're better
 	self.x = check.x
 	self.y = check.y
 end
 
 function get_exit(state)
-	-- Exit cmp is determined by dp/cc
+	-- exit cmp is determined by dp/cc
 	--     -1    1
 	-- 0 -y +x +y +x
 	-- 1 +y +x +y -x
