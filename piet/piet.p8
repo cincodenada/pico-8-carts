@@ -413,6 +413,16 @@ function image:setpx(sel,px)
 	end
 end
 
+function image:is_white(sel)
+	local px = self:getpx(sel)
+	return (px.val == 3 and px.hue < 3)
+end
+
+function image:is_black(sel)
+	local px = self:getpx(sel)
+	return (px.val == 3 and px.hue >= 3)
+end
+
 function pbtn(i) return (not prompt.just_ended and btn(i)) end
 function prompt:show(text, callback)
 	self.callback = callback
@@ -557,8 +567,10 @@ function palette:draw()
 
 	-- debug goes here to take advantage of camera reset
 	color(7)
-	print("Pos: "..view.sel.x.."x"..view.sel.y.."+"..view.nw.x.."x"..view.nw.y)
+	print(view.sel.x.."x"..view.sel.y.."+"..view.nw.x.."x"..view.nw.y)
 	print(view:pxdim().x.."x"..view:pxdim().y)
+	local cur_color=image:getpx(view.sel)
+	print(cur_color.val.."/"..cur_color.hue)
 
 	local bgcolor=5
 	if(paint_mode > 0) bgcolor=4
@@ -889,20 +901,51 @@ function state:reset()
 	view:reset()
 end
 
+function state:get_move()
+	if(self.dp % 2==0) then
+		return {x=1-self.dp, y=0}
+	else
+		return {x=0, y=2-self.dp}
+	end
+end
+
 function state:next()
 	local next = tcopy(self)
 	next.attempts = 0
-	max_block:init(self)
-	blockinfo = get_exit(self)
-	next.x = blockinfo.exit.x
-	next.y = blockinfo.exit.y
-	next.last_value = blockinfo.count
-	if(self.dp % 2==0) then
-		next.x += 1-self.dp
-	else
-		next.y += 2-self.dp
-	end
+	local cur_exit = self:exit()
+	move = self:get_move()
+	next.x = cur_exit.exit.x + move.x
+	next.y = cur_exit.exit.y + move.y
+	next.last_value = cur_exit.count
 	return next
+end
+
+function state:exit()
+	local cur_exit = {}
+	if(image:is_white(self)) then
+		cur_exit.exit = self:slide()
+	else
+		cur_exit = self:color_exit()
+	end
+	return cur_exit
+end
+
+function state:slide()
+	local cur = tcopy(state)
+	local move = self:get_move()
+	while(image:is_white(cur)) do
+		cur.x += move.x
+		cur.y += move.y
+	end
+	-- back up cause we entered another color
+	cur.x -= move.x
+	cur.y -= move.y
+	return cur
+end
+
+function state:color_exit()
+	max_block:init(self)
+	return get_exit(self)
 end
 
 function state:dpinfo()
@@ -989,17 +1032,17 @@ function get_exit(state)
 	-- 1 +y +x +y -x
 	-- 2 +y -x -y -x
 	-- 3 -y -x -y +x
-	last = {}
-	cur = {}
-	next = {}
-	block_nums = {}
+	local last = {}
+	local cur = {}
+	local next = {}
+	local block_nums = {}
 	max_block:init(state)
 	cur[hashloc(state)] = state
-	block_color = packhv(image:getpx(state))
-	block_size = 1
-	numloops = 1
+	local block_color = packhv(image:getpx(max_block))
+	local block_size = 1
+	local numloops = 1
 	while(true) do
-		new_px = 0
+		local new_px = 0
 		block_nums[numloops] = {}
 		for k,loc in pairs(cur) do
 			for dx=-1,1 do
@@ -1162,9 +1205,9 @@ function get_func(from, to)
 end
 
 __gfx__
-04141210012202002121210105032415250004200303132301050505151304020021222202130422222222220200333320331404303015050505303033002010
-03120210120121130303231004222233333333002133041514333312300505053333130030103030020212300010333323233302020202020230210111250521
-01122505050533113033333033332521231313102424303033253010101010101010102421100005141012211111333321212133333333131520222111303535
+ccc1b3f8aa33bbff999999aaee6611e222ffcc8866666dddaaeeeeeee26dccbbff993333bb6d0422222222220200333320331404303015050505303033002010
+cc3333333333bbff00008800c1cc7777e2eeeeee777700ff88f866b3bbf8b3aa996d6666ddf83030020212300010333323233302020202020230210111250521
+cc333300000000ff9900cce2c10000b377eeeeee00006dff77f87777bbbbb377fff80000dddd0005141012211111333321212133333333131520222111303535
 00bbbbbbbbbbbb7799aaa922ee99aab322eeeeee00a97700007700002299dd6d6df8111177771010101010101010101010101010333333333333333333333333
 002277f8f8f8f8f8f8f8f81199f8ffeec1f8b399a9a90000999999000000006de2883399a9773535353333333333333333333333333333333333101010101010
 10101010101010101010101010101010101010101010101033333333333333333333333333333333333535353535353535353535353535353535353535353535
