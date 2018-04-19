@@ -1,7 +1,6 @@
--->8
 -- generate pico-8 color <-> hv lookup tables
-local col2hv = {}
-local hv2col = {}
+col2hv = {}
+hv2col = {}
 for curhue=0,numhues-1 do
 	local colors = {
 		colormap[curhue+1] + shl(colormap[curhue+1],4),

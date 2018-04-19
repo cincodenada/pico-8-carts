@@ -1,4 +1,3 @@
--->8
 function state:reset()
 	self.x=0
 	self.y=0

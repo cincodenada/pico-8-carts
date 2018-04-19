@@ -2,13 +2,13 @@
 -- w/h: 0x0 = 1 cel
 require('util')
 
-local numhues,numvals = 6,4
-local colormap={
+numhues,numvals = 6,4
+colormap={
 	15,10,11,6,12,14,
 	8,9,3,13,1,2
 }
 
-local funcmap={
+funcmap={
 	'n/a','push','pop',
 	'add','sub','mul',
 	'div','mod','not',
@@ -17,30 +17,31 @@ local funcmap={
 	'cin','#out','cout'
 }
 
-local solidpat=0x0000
-local midpat=0xa5a5
+solidpat=0x0000
+midpat=0xa5a5
 
-local cur_color={val=3, hue=1}
+cur_color={val=3, hue=1}
 -- 0 = not editing
 -- 1 = changing selection
 -- 2 = editing colors
 -- 3 = running
-local edit_mode=0
-local paint_mode=0
+edit_mode=0
+paint_mode=0
 
-local fake_state = {dp=0, cc=-1}
+fake_state = {dp=0, cc=-1}
+
 require('hvmap')
 
 ------------------------
 -- object declarations
 ------------------------
 
-local state = {x=0, y=0, dp=0, cc=-1, toggle=0, attempts=0}
-local stack = {}
-local output = ""
-local max_block = {x=nil,y=nil}
+state = {x=0, y=0, dp=0, cc=-1, toggle=0, attempts=0}
+stack = {}
+output = ""
+max_block = {x=nil,y=nil}
 
-local next_loop = {funcs = {}}
+next_loop = {funcs = {}}
 
 require("declarations")
 
@@ -212,8 +213,6 @@ function _draw()
 	prompt:draw()
 end
 
----
--->8
 function draw_px(sel,...)
 	local args = {...}
 	local col
@@ -283,8 +282,6 @@ end
 require("state")
 require("max_block")
 
----
--->8
 function step()
 	local future = state:next()
 

@@ -1,10 +1,9 @@
--->8
 -- stored in sprite + aux data
 -- 128x128 pixels (2 per byte)
 -- 64x128 bytes
 -- plus map-only data of 128x32
 -- for a total of 128x96 bytes
-local image = {
+image = {
 	w=64,
 	h=64,
 	max_bytes=0x2000,
@@ -14,14 +13,14 @@ local image = {
 	header_size=3, -- for now this is constant
 }
 
-local prompt = {
+prompt = {
 	text = "",
 	callback = nil,
 	update_callback = nil,
 	just_ended = false,
 }
 
-local view = {
+view = {
 	nw = {x=0,y=0},
 	pxsize = 2,
 	sel = mksel(0,0),
@@ -29,7 +28,7 @@ local view = {
 	size = {128,128}
 }
 
-local palette = {
+palette = {
 	pxsize = 4,
 	top = 0,
 }
