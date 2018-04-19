@@ -225,13 +225,48 @@ function image:load(mem_start,w,h,gw,gh,memwidth)
 			image:set(x,y,packhv(col2hv[curval]))
 		end
 	end
+	-- Add sentinel value
+	poke(0x0000,5)
+	-- Add dimensions
 	poke(0x3000,w)
 	poke(0x3001,h)
 end
 
 function image:init()
+	local flags = unpackhv(peek(0x0000))
+	-- 4 and 5 are not used in our Piet images
+	-- And also are not valid values
+	-- So we use val=5 in the first byte
+	-- to signal that it is h/v data
+	-- Upper nibble reserved for future use
+	if(flags.val != 5) then
+		-- Try loading external image data
+		-- Images must be bordered left/right by black
+		-- With thickness equal to their gridheight
+		local size = image:find_size()
+		image:load(0x0000, size.x, size.y, size.w, size.h, 128)
+	end
 	self.w = peek(0x3000)
 	self.h = peek(0x3001)
+end
+
+function image:find_size()
+	local x,y = 0,0
+	local w,h = 1,1
+	-- find first brown pixels
+	while(self:getpx(x,0).val != 4) do
+		x += 1
+	end
+	while(self:getpx(0,y).val != 4) do
+		y += 1
+	end
+	while(self:getpx(x,x+w) == 4) do
+		w += 1
+	end
+	while(self:getpx(y,y+w) == 4) do
+		y += 1
+	end
+	return {x=x,y=y,w=w,h=h}
 end
 
 function image:save()

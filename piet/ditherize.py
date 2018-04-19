@@ -48,19 +48,22 @@ rgb_map = {
     getrgb(k): [getrgb(c) for c in v] for k, v in color_map.items()
 }
 black = rgb_map[(0,0,0)]
+gray = (95,87,79)
+brown = (171,82,54)
 
 infile = sys.argv[1]
 outfile = "{}.pico8{}".format(*os.path.splitext(infile))
 
-piet = Image.open(infile)
-(w, h) = piet.size
-piet = piet.resize((w*2,h))
-(w, h) = piet.size
-pixels = piet.load()
-for x in range(w):
+source = Image.open(infile)
+(w, h) = source.size
+
+out = Image.new('RGB', ((w+1)*2, h+1), brown)
+out.paste(source.resize((w*2,h)))
+pixels = out.load()
+for x in range(w*2):
   for y in range(h):
     # This is slow yeah but we're not doing huge things
     px = pixels[x,y]
     pixels[x,y] = rgb_map.get(px, black)[x%2]
 
-piet.save(outfile)
+out.save(outfile)
