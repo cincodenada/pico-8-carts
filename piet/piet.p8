@@ -20,6 +20,7 @@ function printbig(val)
 end
 
 function wrap(text, width)
+	printh("wrap","out")
 	local charwidth = width/4
 	text = text.." "
 	local output, curline, word = "","",""
@@ -619,6 +620,7 @@ function palette:draw()
 		bgcolor
 	)
 		
+	printh("\t\tpixels","log")
 	for r=0,numvals-1 do
 		for c=0,numhues-1 do
 			draw_codel(mksel(c,r),self.pxsize,{val = r, hue = c},self.offx,self.offy)
@@ -628,11 +630,13 @@ function palette:draw()
 	self.curhv = image:getpx(view.sel)
 	draw_dot(mksel(self.curhv.hue,self.curhv.val),self.pxsize,5,self.offx,self.offy)
 
+	printh("\t\tfuncs","log")
 	-- no funcs from black/white blocks
 	if(self.curhv.val!=numvals-1) then
 		self:draw_funcs()
 	end
 
+	printh("\t\toutput","log")
 	if(edit_mode == 3) then
 		wrapped = wrap(output, self.wing_width)
 		print(wrapped.text, 0, self.top+1, 7)
@@ -640,8 +644,10 @@ function palette:draw()
 	end
 
 	view:load_camera()
+	printh("\t\tdone","log")
 end
 function palette:draw_stack()
+	printh("\tdrawing stack","log")
 	local charwidth = flr(self.wing_width/4)
 	local left=128/2+self.tot_w/2+1
 	local sp = #stack
@@ -661,6 +667,7 @@ function palette:draw_stack()
 		end
 		if(sp==0) break
 	end
+	printh("\tdrew","log")
 end
 function palette:draw_funcs()
 	--print(curhv.hue..curhv.val,8,26,5)
@@ -719,6 +726,7 @@ function _update()
 	if(btnp(5)) fake_state.cc = -fake_state.cc
 
 	if(edit_mode == 3) then
+			step()
 		if(btnp(4)) then
 			step()
 		elseif(btnp(5)) then
@@ -818,6 +826,7 @@ end
 
 function _draw()
 	cls()
+	printh("start draw","log")
 	for x=view.nw.x,view.nw.x+view:pxdim().x-1 do
 		for y=view.nw.y,view.nw.y+view:pxdim().y-1 do
 			draw_px(mksel(x,y))
@@ -827,6 +836,7 @@ function _draw()
 		draw_px(view.sel,cur_color)
 	end
 
+	printh("\tpalette","log")
 	palette:draw()
 	
 	local framecolor=5
@@ -838,7 +848,9 @@ function _draw()
 	draw_frame(view.sel,view:gridsize(),framecolor)
 	if(edit_mode == 3) draw_pointer(view.sel,view:gridsize(),pcolor)
 
+	printh("\tprompt","log")
 	prompt:draw()
+	printh("done","log")
 end
 
 ---
@@ -1076,6 +1088,7 @@ function get_exit(state)
 	local block_color = packhv(image:getpx(max_block))
 	local block_size = 1
 	local numloops = 1
+	printh("Finding next exit...","log")
 	while(true) do
 		local new_px = 0
 		block_nums[numloops] = {}
@@ -1104,6 +1117,7 @@ function get_exit(state)
 		next = {}
 		numloops += 1
 	end
+	printh("Found","log")
 
 	return {
 		count = block_size,
@@ -1114,11 +1128,13 @@ end
 ---
 -->8
 function step()
+	printh("start step","log")
 	local future = state:next()
 
 	from = image:getpx(state)
 	to = image:getpx(future)
 
+	printh("\tget func","log")
 	op = get_func(from, to)
 	if(op == "stop") then
 		state.attempts += 1
@@ -1136,6 +1152,7 @@ function step()
 		return
 	end
 
+	printh("\tswitch: "..op,"log")
 	if(op == "push") then
 		stack:push(shr(future.last_value,16))
 	elseif(op == "pop") then
@@ -1209,9 +1226,11 @@ function step()
 		end
 	end
 
+	printh("\tfinish","log")
 	state = future
 	view:set_sel(state.x, state.y)
 	view:recenter()
+	printh("done","log")
 end
 
 function get_val(px)
