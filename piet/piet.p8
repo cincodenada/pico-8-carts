@@ -8,6 +8,32 @@ function packhv(hv) return hv.val+shl(hv.hue,4) end
 function unpackhv(hv) return {val=band(hv,0x0f), hue=lshr(band(hv,0xf0),4)} end
 function hashloc(loc) return tostr(loc.x).."#"..tostr(loc.y) end
 
+local trace = {
+	file = "out",
+	sections = {},
+}
+function trace:log(str)
+	local out = ""
+	for i=1,#self.sections do
+		out = out.."\t"
+	end
+	out = out..str
+	printh(out, self.file)
+end
+function trace:start(str)
+	self:log("start "..str)
+	add(self.sections, str)
+end
+function trace:finish()
+	local str = "???"
+	if(#self.sections > 0) then
+		str = self.sections[#self.sections]
+		self.sections[#self.sections] = nil
+	end
+	self:log("end "..str)
+end
+
+
 function printbig(val)
 	local s = ""
 	local v = abs(val)
@@ -20,7 +46,7 @@ function printbig(val)
 end
 
 function wrap(text, width)
-	printh("wrap","out")
+	trace:start("wrap")
 	local charwidth = width/4
 	text = text.." "
 	local output, curline, word = "","",""
@@ -66,6 +92,7 @@ function wrap(text, width)
 		pos += 1
 	end
 	if(curline!="") output = output..curline.."\n"
+	trace:finish()
 	return {text=output, lines=lines}
 end
 
@@ -599,6 +626,7 @@ function palette:init()
 	self.offy=self.top + self.tot_h/2 - (numvals*self.pxsize/2)
 end
 function palette:draw()
+	trace:start("palette")
 	view:save_camera()
 
 	-- debug goes here to take advantage of camera reset
@@ -620,7 +648,7 @@ function palette:draw()
 		bgcolor
 	)
 		
-	printh("\t\tpixels","log")
+	trace:log("pixels")
 	for r=0,numvals-1 do
 		for c=0,numhues-1 do
 			draw_codel(mksel(c,r),self.pxsize,{val = r, hue = c},self.offx,self.offy)
@@ -630,13 +658,13 @@ function palette:draw()
 	self.curhv = image:getpx(view.sel)
 	draw_dot(mksel(self.curhv.hue,self.curhv.val),self.pxsize,5,self.offx,self.offy)
 
-	printh("\t\tfuncs","log")
+	trace:log("funcs")
 	-- no funcs from black/white blocks
 	if(self.curhv.val!=numvals-1) then
 		self:draw_funcs()
 	end
 
-	printh("\t\toutput","log")
+	trace:log("output")
 	if(edit_mode == 3) then
 		wrapped = wrap(output, self.wing_width)
 		print(wrapped.text, 0, self.top+1, 7)
@@ -644,10 +672,10 @@ function palette:draw()
 	end
 
 	view:load_camera()
-	printh("\t\tdone","log")
+	trace:finish()
 end
 function palette:draw_stack()
-	printh("\tdrawing stack","log")
+	trace:start("stack")
 	local charwidth = flr(self.wing_width/4)
 	local left=128/2+self.tot_w/2+1
 	local sp = #stack
@@ -667,7 +695,7 @@ function palette:draw_stack()
 		end
 		if(sp==0) break
 	end
-	printh("\tdrew","log")
+	trace:finish()
 end
 function palette:draw_funcs()
 	--print(curhv.hue..curhv.val,8,26,5)
@@ -826,7 +854,7 @@ end
 
 function _draw()
 	cls()
-	printh("start draw","log")
+	trace:start("draw")
 	for x=view.nw.x,view.nw.x+view:pxdim().x-1 do
 		for y=view.nw.y,view.nw.y+view:pxdim().y-1 do
 			draw_px(mksel(x,y))
@@ -836,7 +864,6 @@ function _draw()
 		draw_px(view.sel,cur_color)
 	end
 
-	printh("\tpalette","log")
 	palette:draw()
 	
 	local framecolor=5
@@ -848,9 +875,9 @@ function _draw()
 	draw_frame(view.sel,view:gridsize(),framecolor)
 	if(edit_mode == 3) draw_pointer(view.sel,view:gridsize(),pcolor)
 
-	printh("\tprompt","log")
+	trace:log("prompt")
 	prompt:draw()
-	printh("done","log")
+	trace:finish()
 end
 
 ---
@@ -1088,7 +1115,7 @@ function get_exit(state)
 	local block_color = packhv(image:getpx(max_block))
 	local block_size = 1
 	local numloops = 1
-	printh("Finding next exit...","log")
+	trace:log("Finding next exit...")
 	while(true) do
 		local new_px = 0
 		block_nums[numloops] = {}
@@ -1117,7 +1144,7 @@ function get_exit(state)
 		next = {}
 		numloops += 1
 	end
-	printh("Found","log")
+	trace:log("Found")
 
 	return {
 		count = block_size,
@@ -1128,13 +1155,13 @@ end
 ---
 -->8
 function step()
-	printh("start step","log")
+	trace:start("step")
 	local future = state:next()
 
 	from = image:getpx(state)
 	to = image:getpx(future)
 
-	printh("\tget func","log")
+	trace:log("get func")
 	op = get_func(from, to)
 	if(op == "stop") then
 		state.attempts += 1
@@ -1226,11 +1253,11 @@ function step()
 		end
 	end
 
-	printh("\tfinish","log")
+	trace:log("finish")
 	state = future
 	view:set_sel(state.x, state.y)
 	view:recenter()
-	printh("done","log")
+	trace:finish()
 end
 
 function get_val(px)
