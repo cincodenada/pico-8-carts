@@ -55,10 +55,7 @@ end
 frog = class(entity)
 function frog:constructor(x,y)
 	getmetatable(frog).constructor(self, x, y,
-		sprite(2, 2,
-			{0,2,4,6,8,10,12,14,32,34,36,38,40,42,44,42,44},
-			{0,0,0,0,1,1,2,1,0,1,-1,-1,-1,0,-1,0}
-		)
+		sprite(2, 2, {0,2,4,6,8,10,12,14,32,34,36,38,40,42,44})
 	)
 end
 
