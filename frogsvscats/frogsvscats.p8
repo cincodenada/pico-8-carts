@@ -18,26 +18,29 @@ function class(superclass)
 	return cls
 end
 
+-- position is 1px below lower-left corner of sprite ("on the ground")
 sprite = class()
 function sprite:constructor(frames, w, h)
 	self.frames, self.w, self.h = frames, w, h
 	self.cur_frame = 0
+	self.facing = 1
 end
 function sprite:draw(x, y)
-	spr(self.frames[self.cur_frame], x, y, self.w, self.h)
+	local flipped = (self.facing==1)
+	spr(self.frames[self.cur_frame], x, y-self.h*8, self.w, self.h, flipped)
+end
+function sprite:move_frame(howmany)
+	self.cur_frame += howmany
+	self.cur_frame %= #self.frames
 end
 
 entity = class()
 function entity:constructor(x, y, sprite)
-	self.x, self.y = x, y
-	self.sprite = sprite
+	self.x, self.y, self.sprite = x, y, sprite
 end
 function entity:draw()
 	self.sprite:draw(self.x, self.y)
 end
-function entity:update()
-end
-
 
 frog = class(entity)
 function frog:constructor(x,y)
@@ -46,29 +49,45 @@ function frog:constructor(x,y)
 end
 
 player = class(frog)
-function player:constructor(x,y)
-	getmetatable(player).constructor(self, x, y)
+function player:constructor(...)
+	getmetatable(player).constructor(self, ...)
+end
+function player:update()
+	if(btnp(2)) self:jump(-1)
+	if(btnp(3)) self:jump(1)
+
+	if(self.jumping) then
+		self.sprite:move_frame(1)
+		if(self.sprite.cur_frame == 0) self.jumping = false
+	end
+end
+function player:jump(dir)
+	if(self.jumping) return
+	self.sprite.facing = dir
+	self.jumping = true
 end
 
 local game = {}
-
+function game:reset()
+	self.player = player(0,120)
+end
 function game:update()
-	game.player:update()
+	self.player:update()
 end
 function game:draw()
-	game.player:draw()
+	self.player:draw()
 end
 
 function _init()
-	game.player = frog()
+	game:reset()
 end
 
 function _update()
-	game.update()
+	game:update()
 end
 
 function _draw()
-	game.draw()
+	game:draw()
 end
 
 __gfx__
