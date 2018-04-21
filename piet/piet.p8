@@ -9,7 +9,7 @@ function unpackhv(hv) return {val=band(hv,0x0f), hue=lshr(band(hv,0xf0),4)} end
 function hashloc(loc) return tostr(loc.x).."#"..tostr(loc.y) end
 
 local trace = {
-	file = "out",
+	file = "log",
 	sections = {},
 }
 function trace:log(str)
@@ -47,47 +47,57 @@ end
 
 function wrap(text, width)
 	trace:start("wrap")
-	local charwidth = width/4
+	trace:log(text)
+	local charwidth = flr(width/4)
 	text = text.." "
 	local output, curline, word = "","",""
 	local pos,lines = 1,1
 	while(pos <= #text) do
 		local curlet = sub(text,pos,pos)
 		if(curlet == " ") then
+			trace:log("space")
 			if(#curline + #word > charwidth) then
+				trace:log("over length")
 				output = output..curline.."\n"
 				curline=""
 				lines += 1
 				-- back up so we re-process the space next line
 				pos -= 1
 			elseif(#curline + #word == charwidth) then
+				trace:log("at length")
 				output = output..curline..word.."\n"
 				curline=""
 				lines += 1
 				word = ""
 			else
+				trace:log("under length")
 				curline = curline..word.." "
 				word = ""
 			end
 		elseif(curlet == "\n") then
+			trace:log("newline")
 			if(#curline + #word > charwidth) then
+				trace:log("over length")
 				output = output..curline.."\n"
 				lines+=1
 				output = output..word.."\n"
 			else
+				trace:log("at/under length")
 				output = output..curline..word.."\n"
 			end
 			curline=""
 			word=""
 			lines+=1
 		else
+			trace:log("regular")
+			word = word..curlet
 			-- if we have a word that's too long, just break it
-			if(#curline == "" and #word == charwidth) then
-				output = output..#word.."\n"
+			if(curline == "" and #word == charwidth) then
+				trace:log("long word")
+				output = output..word.."\n"
 				word=""
 				lines += 1
 			end
-			word = word..curlet
 		end
 		pos += 1
 	end
