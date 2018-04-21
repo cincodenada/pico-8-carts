@@ -18,6 +18,55 @@ function class(superclass)
 	return cls
 end
 
+function wrap(text, width)
+	local charwidth = flr(width/4)
+	text = text.." "
+	local output, curline, word = "","",""
+	local pos,lines = 1,1
+	while(pos <= #text) do
+		local curlet = sub(text,pos,pos)
+		if(curlet == " ") then
+			if(#curline + #word > charwidth) then
+				output = output..curline.."\n"
+				curline=""
+				lines += 1
+				-- back up so we re-process the space next line
+				pos -= 1
+			elseif(#curline + #word == charwidth) then
+				output = output..curline..word.."\n"
+				curline=""
+				lines += 1
+				word = ""
+			else
+				curline = curline..word.." "
+				word = ""
+			end
+		elseif(curlet == "\n") then
+			if(#curline + #word > charwidth) then
+				output = output..curline.."\n"
+				lines+=1
+				output = output..word.."\n"
+			else
+				output = output..curline..word.."\n"
+			end
+			curline=""
+			word=""
+			lines+=1
+		else
+			word = word..curlet
+			-- if we have a word that's too long, just break it
+			if(curline == "" and #word == charwidth) then
+				output = output..word.."\n"
+				word=""
+				lines += 1
+			end
+		end
+		pos += 1
+	end
+	if(curline!="") output = output..curline.."\n"
+	return {text=output, lines=lines}
+end
+
 -- position is 1px below lower-left corner of sprite ("on the ground")
 sprite = class()
 function sprite:constructor(w, h, frames)
@@ -85,15 +134,24 @@ function player:jump(dir)
 	self.jumping = true
 end
 
-local game = {}
+local game = {
+	texts = {},
+}
 function game:reset()
 	self.player = player(0,120)
+	add(self.texts, {
+		x=1,y=1,col=7,
+		msg="you wake up in a bright field. you attempt to walk forward, but find that you feel a little...hoppy. ahead, you see movement in the distance."
+	})
 end
 function game:update()
 	self.player:update()
 end
 function game:draw()
 	self.player:draw()
+	for t in all(self.texts) do
+		print(wrap(t.msg, 127).text, t.x, t.y, t.col)
+	end
 end
 
 function _init()
