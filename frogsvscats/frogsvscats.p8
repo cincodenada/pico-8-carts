@@ -20,18 +20,23 @@ end
 
 -- position is 1px below lower-left corner of sprite ("on the ground")
 sprite = class()
-function sprite:constructor(frames, w, h)
-	self.frames, self.w, self.h = frames, w, h
+function sprite:constructor(w, h, frames, offset)
+	self.w, self.h, self.frames, self.offset = w, h, frames, offset
 	self.cur_frame = 0
 	self.facing = 1
 end
 function sprite:draw(x, y)
 	local flipped = (self.facing==-1)
-	spr(self.frames[self.cur_frame], x, y-self.h*8, self.w, self.h, flipped)
+	local f = flr(self.cur_frame)+1
+	spr(self.frames[f], x-self:adj(f), y-self.h*8, self.w, self.h, flipped)
 end
 function sprite:move_frame(howmany)
 	self.cur_frame += howmany
 	self.cur_frame %= #self.frames
+end
+function sprite:adj(n)
+	if(self.offset[n]) return self.offset[n]
+	return 0
 end
 
 entity = class()
@@ -45,7 +50,11 @@ end
 frog = class(entity)
 function frog:constructor(x,y)
 	getmetatable(frog).constructor(self, x, y,
-		sprite({0,2,4,6,8,10,12,14,32,34,36,38,40,42,44,42,44}, 2, 2))
+		sprite(2, 2,
+			{0,2,4,6,8,10,12,14,32,34,36,38,40,42,44,42,44},
+			{0,0,0,0,1,1,2,1,0,1,-1,-1,-1,0,-1,0}
+		)
+	)
 end
 
 player = class(frog)
@@ -57,7 +66,8 @@ function player:update()
 	if(btnp(1)) self:jump(1)
 
 	if(self.jumping) then
-		self.sprite:move_frame(1)
+		self.sprite:move_frame(0.5)
+		if(self.sprite.cur_frame >=5 and self.sprite.cur_frame <=8) self.x += 1
 		if(self.sprite.cur_frame == 0) self.jumping = false
 	end
 end
