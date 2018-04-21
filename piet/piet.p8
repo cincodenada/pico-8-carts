@@ -296,10 +296,13 @@ function image:find_size()
 	local x,y = 0,0
 	local w,h = 1,1
 	-- find first brown pixels
-	while(self:getpx(x,0).val != 4) do x += 1 end
-	while(self:getpx(0,y).val != 4) do y += 1 end
-	while(self:getpx(x,x+w) == 4) do w += 1 end
-	while(self:getpx(y,y+w) == 4) do y += 1 end
+	local prev = self.header_size
+	self.header_size = 0
+	while(self:get(x,0) != 4) do x += 1 end
+	while(self:get(0,y) != 4) do y += 1 end
+	while(self:get(x+w,y) == 4) do w += 1 end
+	while(self:get(x,y+h) == 4) do h += 1 end
+	self.header_size = prev
 	return {x=x,y=y,w=w,h=h}
 end
 
@@ -735,7 +738,6 @@ function palette:draw_funcs()
 end
 
 cartdata('cincodenada_piet')
-image:load(0x0000, 38, 5, 2, 1, 64)
 image:init()
 palette:init()
 -- view:init() must be after palette:init()
