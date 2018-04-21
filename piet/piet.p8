@@ -4,8 +4,9 @@ __lua__
 -- vim: sw=2 ts=2 sts=2 noet foldmethod=marker foldmarker=-->8,---
 -- w/h: 0x0 = 1 cel
 function hex(n,d) return sub(tostr(n,true),5,6) end
+function nibs(byte) return {band(byte,0x0f),lshr(band(byte,0xf0),4)} end
 function packhv(hv) return hv.val+shl(hv.hue,4) end
-function unpackhv(hv) return {val=band(hv,0x0f), hue=lshr(band(hv,0xf0),4)} end
+function unpackhv(hv) local n=nibs(hv) return {val=n[1],hue=n[2]} end
 function hashloc(loc) return tostr(loc.x).."#"..tostr(loc.y) end
 
 local trace = {
@@ -211,8 +212,8 @@ local image = {
 	h=64,
 	max_bytes=0x2000,
 	mem_start=0x0000,
-	max_w=64,
-	max_h=128,
+	max_w=128,
+	max_h=96,
 	header_size=1,
 }
 
@@ -256,15 +257,21 @@ end
 function image:set(x,y,val)
 	return poke(y*self.w+x+self.header_size,val)
 end
+function image:raw(x,y)
+	return nibs(peek(y*self.max_w/2+x/2))[x%2+1]
+end
 function image:load(mem_start,w,h,gw,gh,memwidth)
 	self.w=w
 	self.h=h
+	local lastpx = nil
 	for y=0,h-1 do
-		for x=0,w-1 do
+		for x=0,(w-1)/gw do
 			-- gs/2 cause 2px per byte
 			byte=y*gh*memwidth+x*gw/2
-			curval = peek(mem_start+byte)
-			image:set(x,y,packhv(col2hv[curval]))
+			curpx = {x,y,peek(mem_start+byte)}
+			if(lastpx) print(lastpx[1].."x"..lastpx[2]..":"..hex(lastpx[3], 2))
+			if(lastpx) image:set(lastpx[1],lastpx[2],packhv(col2hv[lastpx[3]]))
+			lastpx = curpx
 		end
 	end
 	-- Add sentinel value
@@ -286,6 +293,7 @@ function image:init()
 		-- Images must be bordered left/right by black
 		-- With thickness equal to their gridheight
 		local size = image:find_size()
+		print(size.x.."x"..size.y.."+"..size.w.."x"..size.h)
 		image:load(0x0000, size.x, size.y, size.w, size.h, 128)
 	end
 	self.w = peek(0x3000)
@@ -296,13 +304,14 @@ function image:find_size()
 	local x,y = 0,0
 	local w,h = 1,1
 	-- find first brown pixels
-	local prev = self.header_size
-	self.header_size = 0
-	while(self:get(x,0) != 4) do x += 1 end
-	while(self:get(0,y) != 4) do y += 1 end
-	while(self:get(x+w,y) == 4) do w += 1 end
-	while(self:get(x,y+h) == 4) do h += 1 end
-	self.header_size = prev
+	while(self:raw(x,0) != 4 and x < self.max_w) do
+		x += 1 end
+	while(self:raw(0,y) != 4 and y < self.max_h) do
+		y += 1 end
+	while(self:raw(x+w,0) == 4 and x+w < self.max_w) do
+		w += 1 end
+	while(self:raw(0,y+h) == 4 and y+h < self.max_h) do
+		h += 1 end
 	return {x=x,y=y,w=w,h=h}
 end
 
@@ -1294,12 +1303,12 @@ function get_func(from, to)
 end
 
 __gfx__
-ccc1b3f8aa33bbff999999aaee6611e222ffcc8866666dddaaeeeeeee26dccbbff993333bb6d0422222222220200333320331404303015050505303033002010
-cc3333333333bbff00008800c1cc7777e2eeeeee777700ff88f866b3bbf8b3aa996d6666ddf83030020212300010333323233302020202020230210111250521
-cc333300000000ff9900cce2c10000b377eeeeee00006dff77f87777bbbbb377fff80000dddd0005141012211111333321212133333333131520222111303535
-00bbbbbbbbbbbb7799aaa922ee99aab322eeeeee00a97700007700002299dd6d6df8111177771010101010101010101010101010333333333333333333333333
-002277f8f8f8f8f8f8f8f81199f8ffeec1f8b399a9a90000999999000000006de2883399a9773535353333333333333333333333333333333333101010101010
-10101010101010101010101010101010101010101010101033333333333333333333333333333333333535353535353535353535353535353535353535353535
+ccc1b3f8aa33bbff999999aaee6611e222ffcc8866666dddaaeeeeeee26dccbbff993333bb6d4422222222220200333320331404303015050505303033002010
+cc3333333333bbff00008800c1cc7777e2eeeeee777700ff88f866b3bbf8b3aa996d6666ddf84430020212300010333323233302020202020230210111250521
+cc333300000000ff9900cce2c10000b377eeeeee00006dff77f87777bbbbb377fff80000dddd4405141012211111333321212133333333131520222111303535
+00bbbbbbbbbbbb7799aaa922ee99aab322eeeeee00a97700007700002299dd6d6df8111177774410101010101010101010101010333333333333333333333333
+002277f8f8f8f8f8f8f8f81199f8ffeec1f8b399a9a90000999999000000006de2883399a9774435353333333333333333333333333333333333101010101010
+44444444444444444444444444444444444444444444444444444444444444444444444444444433333535353535353535353535353535353535353535353535
 35353535203535353535333333333333333333333333333333331010101010101010101010101010101010101010101010101010101010101010333333333333
 33333333333333333333353535353535353535353535353535353535353535353535353535203535353535333333333333333333333333333310101010101010
 10101010101010101010101010101010101010101010101010101010103333333333333333333333333333353535353535353535353535353535353535353535
