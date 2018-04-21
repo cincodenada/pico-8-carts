@@ -11,8 +11,11 @@ function hashloc(loc) return tostr(loc.x).."#"..tostr(loc.y) end
 local trace = {
 	file = "log",
 	sections = {},
+	enable = false,
 }
 function trace:log(str)
+	if(not self.enable) return
+
 	local out = ""
 	for i=1,#self.sections do
 		out = out.."\t"
@@ -210,6 +213,7 @@ local image = {
 	mem_start=0x0000,
 	max_w=64,
 	max_h=128,
+	header_size=1,
 }
 
 local prompt = {
@@ -247,10 +251,10 @@ function next_loop:run()
 end
 
 function image:get(x,y)
-	return peek(y*self.w+x)
+	return peek(y*self.w+x+self.header_size)
 end
 function image:set(x,y,val)
-	return poke(y*self.w+x,val)
+	return poke(y*self.w+x+self.header_size,val)
 end
 function image:load(mem_start,w,h,gw,gh,memwidth)
 	self.w=w
@@ -292,18 +296,10 @@ function image:find_size()
 	local x,y = 0,0
 	local w,h = 1,1
 	-- find first brown pixels
-	while(self:getpx(x,0).val != 4) do
-		x += 1
-	end
-	while(self:getpx(0,y).val != 4) do
-		y += 1
-	end
-	while(self:getpx(x,x+w) == 4) do
-		w += 1
-	end
-	while(self:getpx(y,y+w) == 4) do
-		y += 1
-	end
+	while(self:getpx(x,0).val != 4) do x += 1 end
+	while(self:getpx(0,y).val != 4) do y += 1 end
+	while(self:getpx(x,x+w) == 4) do w += 1 end
+	while(self:getpx(y,y+w) == 4) do y += 1 end
 	return {x=x,y=y,w=w,h=h}
 end
 
@@ -750,7 +746,7 @@ menuitem(1, "run program", function() state:reset() edit_mode=3 end)
 menuitem(2, "save program", function() image:save() end)
 menuitem(3, "resize program", function() image:resize() end)
 
-function _update()
+function _update60()
 	next_loop:run()
 
 	if(prompt:active()) then
