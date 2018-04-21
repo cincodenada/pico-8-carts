@@ -46,6 +46,11 @@ end
 function entity:draw()
 	self.sprite:draw(self.x, self.y)
 end
+-- Relative to facing!
+function entity:move(dx,dy)
+	self.x += dx*self.sprite.facing
+	self.y += dy*self.sprite.facing
+end
 
 frog = class(entity)
 function frog:constructor(x,y)
@@ -66,8 +71,12 @@ function player:update()
 	if(btnp(1)) self:jump(1)
 
 	if(self.jumping) then
-		self.sprite:move_frame(0.5)
-		if(self.sprite.cur_frame >=5 and self.sprite.cur_frame <=8) self.x += 1
+		if(self.sprite.cur_frame >=4 and self.sprite.cur_frame <=8) then
+			self:move(1,0)
+			self.sprite:move_frame(0.25)
+		else
+			self.sprite:move_frame(0.5)
+		end
 		if(self.sprite.cur_frame == 0) self.jumping = false
 	end
 end
