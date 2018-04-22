@@ -92,8 +92,9 @@ local lore = {
 		-- all coords in blocks!
 		{
 			x=0,y=0,w=32,
+			px=22,py=10,
 			cats = {{25,11}},
-			doors = {{22,12},{18,9},{11,7},{5,9},{28,16}}
+			doors = {{22,12},{18,9},{11,7},{5,9},{28,16}},
 		},
 	},
 }
@@ -138,7 +139,8 @@ function game:load_area(id)
 	self.texts = {{msg=a.intro, col=7, x=self.x}}
 	self.to_scoot = 0
 	self.x = m.x
-	game.player.x = self.x+1
+	game.player.x = self.x+m.px*8
+	game.player.y = m.py*8
 end
 function game:add_door(di,idx)
 		local dc = self.cur_map.doors[idx]
