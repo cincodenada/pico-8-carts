@@ -115,6 +115,8 @@ function game:reset()
 end
 function game:save_camera() add(self.cameras, peek4(0x5f28)) camera() end
 function game:load_camera() poke4(0x5f28, self.cameras[#self.cameras]) self.cameras[#self.cameras] = nil end
+function game:xmin() return self.cur_map.x end
+function game:xmax() return self.cur_map.x+self.cur_map.w*8-1 end
 function game:load_area(id)
 	local a = lore.areas[id]
 	local m = lore.maps[a.mapid]
@@ -174,10 +176,10 @@ function game:draw_debug()
 	end
 end
 function game:scoot(dist)
-	if(self.x + dist < self.cur_map.x) then
-		dist = self.cur_map.x - self.x
-	elseif(self.x + dist >= self.cur_map.x+self.cur_map.w) then
-		dist = self.cur_map.x+self.cur_map.w-self.x-1
+	if(self.x + dist < self:xmin()) then
+		dist = self:xmin() - self.x
+	elseif(self.x + dist > self:xmax()) then
+		dist = self:xmax()-self.x
 	end
 	self.to_scoot = dist
 end
@@ -356,6 +358,11 @@ function entity:update_pos()
 		self.y += self.cur_move.vy/self.slow
 	else
 		if(self:is_floating()) self.y += 1.5
+	end
+
+	if(self.x < game:xmin()) self.x = game:xmin()
+	if(self.x+self.w >= game:xmax()) then
+		self.x = game:xmax()-self.w*8
 	end
 end
 function entity:update_speed()
@@ -574,11 +581,6 @@ function player:update()
 		return
 	end
 
-	if(self.x < game.cur_map.x) self.x = game.cur_map.x
-	if(self.x+self.w >= game.cur_map.x+game.cur_map.w) then
-		self.x = game.cur_map.x+game.cur_map.w-self.w-1
-	end
-	
 	if(self.x > game.x + 128-self.w) then
 		game:scoot(self.w)
 	elseif(self.x < game.x+self.w) then
