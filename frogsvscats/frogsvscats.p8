@@ -75,7 +75,7 @@ local lore = {
 	areas = {
 		{
 			mapid = 1,
-			intro = "you wake up in a bright field. you attempt to walk forward, but find that you feel a little...hoppy. ahead, you see movement in the distance.",
+			intro = "you're in an open field. you can see far from here.",
 			links = {
 				-- default: n/s/e/w
 				north = {"a small stream. it looks refreshing.",2},
@@ -104,7 +104,7 @@ local lore = {
 			x=32,y=0,w=16,
 			px=5,py=0,
 			cats = {{25,11}},
-			doors = {{33,3},{33,9},{45,12}},
+			doors = {{33,4},{33,10},{45,13}},
 		},
 	},
 }
@@ -124,6 +124,10 @@ local game = {
 function game:reset()
 	self.player = player(0,50)
 	self:load_area(1)
+	-- Override area text and player position for first play
+  self.texts ={{msg="you wake up in a bright field. you attempt to walk forward, but find that you feel a little...hoppy.\nahead, you see\nmovement in the\ndistance.",x=0}}
+	self.player.x=0
+	self.player.y=120
 end
 function game:save_camera() add(self.cameras, peek4(0x5f28)) camera() end
 function game:load_camera() poke4(0x5f28, self.cameras[#self.cameras]) self.cameras[#self.cameras] = nil end
@@ -203,7 +207,9 @@ function game:draw()
 	cury = 1
 	for t in all(self.texts) do
 		local w = wrap(t.msg,127)
-		print(w.text,t.x+1,cury,t.col)
+		local c = t.col
+		if(not c) c=7
+		print(w.text,t.x+1,cury,c)
 		cury += w.lines*6
 	end
 	if(self.debug!="") game:draw_debug()
