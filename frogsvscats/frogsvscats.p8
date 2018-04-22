@@ -114,14 +114,14 @@ function game:draw()
 	for t in all(self.texts) do
 		print(wrap(t.msg, 127).text, t.x, t.y, t.col)
 	end
-	game:draw_debug()
+	--game:draw_debug()
 end
 function game:dbg(txt)
 	self.debug = self.debug..txt.."\n"
 end
 function game:draw_debug()
 	for b in all(self.debug_blocks) do
-		spr(82+b.s,b.x*8,b.y*8)
+		spr(240+b.s,b.x*8,b.y*8)
 	end
 	if(#self.debug > 0) then
 		self:save_camera()
