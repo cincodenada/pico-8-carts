@@ -227,16 +227,16 @@ end
 visible = class()
 function visible:constructor(x,y,sprite)
 	self.x, self.y, self.sprite = x, y, sprite
-	self.w = self.sprite.w*8-1
-	self.h = self.sprite.h*8-1
+	self.w = self.sprite.w*8
+	self.h = self.sprite.h*8
 end
 function visible:draw()
 	self.sprite:draw(self.x, self.y)
 end
 function visible:center()
 	return {
-		x=self.x + (self.sprite.w*8)/2,
-		y=self.y - (self.sprite.h*8)/2
+		x=self.x + self.w/2,
+		y=self.y - self.h/2
 	}
 end
 -- returns boundaries, idx are buttons (lrud)
