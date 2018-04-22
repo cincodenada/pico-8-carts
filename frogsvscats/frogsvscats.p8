@@ -198,8 +198,8 @@ function sprite:cur_sprite()
 end
 function sprite:flag(n)
 	-- for now only support top row
-	local sprite_num = flr(n/8)
-	return fget(self:cur_sprite() + sprite_num, n%8)
+	local subidx = flr(n/8)
+	return fget(self:cur_sprite() + subidx, n%8)
 end
 
 entity = class()
@@ -214,6 +214,7 @@ function entity:constructor(x, y, sprite)
 		looping = false,
 		frame = 0,
 	}
+	self.frame_slow = {}
 	self.slow = 1
 end
 function entity:draw()
@@ -250,19 +251,32 @@ function entity:update_speed()
 end
 function entity:update_anim()
 	if(self.anim_state.active) then
-		-- flag 8 is 2-frame sprites
-		if(self.sprite:flag(8)) then
-			self.sprite:move_frame(self:fpf()/2/self.slow)
-		else
-			self.sprite:move_frame(self:fpf()/self.slow)
-		end
+		self.sprite:move_frame(self:fpf()/self.slow)
 
 		if(not self.anim_state.looping and self.sprite:entered(0)) then
 			self.anim_state.active = false
+			-- frame slows on one-shots expire
+			self.frame_slow = {}
 		end
 	end
 end
+function entity:set_frame_slow(first, last, slow)
+	for n=first,last do
+		self.frame_slow[n] = slow
+	end
+end
 function entity:fpf()
+	-- flag 8 is 2-frame sprites
+	local frame_slow = 1
+	if(self.frame_slow[self.sprite:frame()]) then
+		frame_slow = self.frame_slow[self.sprite:frame()]
+	elseif(self.sprite:flag(8)) then
+		frame_slow = 2
+	end
+
+	return self:base_fpf()/frame_slow
+end
+function entity:base_fpf()
 	if(self.cur_move) then
 		return abs(self.cur_move.vx)
 	else
@@ -313,11 +327,13 @@ function entity:check_collisions()
 			--self.y=cblock.y*8+8+self.h
 		end
 
-		--printh("cb:"..cblock.y.."/"..(cblock.y*8).." sy:"..self.y.." bb.s:"..bb.s,"log")
-		if(self:contains_x(cblock.x*8)) then
-			self.x=cblock.x*8-self.w-1
-		elseif(self:contains_x(cblock.x*8+7)) then
-			self.x=cblock.x*8+8
+		if(self.cur_move and (not self.cur_move.vx == 0)) then
+			--printh("cb:"..cblock.y.."/"..(cblock.y*8).." sy:"..self.y.." bb.s:"..bb.s,"log")
+			if(self:contains_x(cblock.x*8)) then
+				self.x=cblock.x*8-self.w-1
+			elseif(self:contains_x(cblock.x*8+7)) then
+				self.x=cblock.x*8+8
+			end
 		end
 	end
 
@@ -383,7 +399,7 @@ function frog:constructor(x,y)
 		sprite(2, 2, {0,2,4,6,8,10,12,14,32,34,36,38,40,42,44})
 	)
 end
-function frog:fpf() return 1 end
+function frog:base_fpf() return 1 end
 function frog:jump(dir)
 	if(self:is_floating()) return
 	if(self.jumping and not self.leaping) then
@@ -406,28 +422,39 @@ function frog:update_jump()
 		if(self.sprite:entered(5)) then
 			-- start movement
 			if(self.leaping) then
-				self:replace_move(16,8,1.5,-1)
+				if(self.leaping_up) then
+					self:set_frame_slow(5,8,4)
+					self:replace_move(0,24,0,-2)
+				else
+					self:replace_move(16,8,1.5,-1)
+				end
 			else
 				self:replace_move(16,0,1.5,0)
 			end
 		end
 
-		if(self.sprite:entered(13) and self.next_jump) then
-			self.sprite.cur_frame = 4
-			self.next_jump = false
-			self.leaping = false
+		if(self.sprite:entered(13) and self.next_jump and not self:is_floating()) then
+			self:reset_jump()
+			self.sprite:set_frame(4)
+			-- un-reset this one, we're still jumping
+			self.jumping = true
 			sfx(0)
 		elseif(self.sprite:entered(0)) then
-			self.jumping = false
-			self.next_jump = false
-			self.leaping = false
+			self:reset_jump()
 		end
 	end
 end
 function frog:leap(up)
 	if(self:is_floating()) return
 	self.leaping = true
+	if(up) self.leaping_up = true
 	self:jump()
+end
+function frog:reset_jump()
+	self.jumping = false
+	self.next_jump = false
+	self.leaping = false
+	self.leaping_up = false
 end
 
 player = class(frog)
@@ -438,6 +465,7 @@ function player:update()
 	if(btnp(0)) self:jump(-1)
 	if(btnp(1)) self:jump(1)
 	if(btnp(2)) self:leap()
+	if(btnp(4)) self:leap(true)
 
 	getmetatable(player).update(self)
 	self:update_jump()
@@ -728,7 +756,7 @@ __label__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 
 __gff__
-00000000000000000000000000000000000000001000100010002001310111010000000000000000000000000000000000011000f000f000f0000000f000f00000000000000000000000000000000000100020002000100010000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000100010001000000001000100010002001310111010001000000000000000000000000000000011000f000f000f0000000f000f00000000000000000000000000000000000100020002000100010000000000000000000000000000000000000000000000000000000000000000000000000000000
 0101010000000000000000000000080800000000000000000000000000000808000000000000000000000000000008080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
