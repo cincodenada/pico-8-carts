@@ -384,30 +384,7 @@ function frog:constructor(x,y)
 	)
 end
 function frog:fpf() return 1 end
-
-player = class(frog)
-function player:constructor(...)
-	getmetatable(player).constructor(self, ...)
-end
-function player:update()
-	if(btnp(0)) self:jump(-1)
-	if(btnp(1)) self:jump(1)
-	if(btnp(2)) self:leap()
-
-	getmetatable(player).update(self)
-	self:update_jump()
-
-	if(self.y - self.sprite.h > 127) then
-		sfx(2)
-		game:reset(200)
-		return
-	end
-
-	if(self.x > game.x + 110) then
-		game:scoot(16)
-	end
-end
-function player:jump(dir)
+function frog:jump(dir)
 	if(self:is_floating()) return
 	if(self.jumping and not self.leaping) then
 		if(dir == self.sprite.facing) then
@@ -423,7 +400,7 @@ function player:jump(dir)
 	self:animate(false)
 	sfx(0)
 end
-function player:update_jump()
+function frog:update_jump()
 	if(self.jumping) then
 		-- manage start/end of jump
 		if(self.sprite:entered(5)) then
@@ -447,10 +424,34 @@ function player:update_jump()
 		end
 	end
 end
-function player:leap()
+function frog:leap(up)
 	if(self:is_floating()) return
 	self.leaping = true
 	self:jump()
+end
+
+player = class(frog)
+function player:constructor(...)
+	getmetatable(player).constructor(self, ...)
+end
+function player:update()
+	if(btnp(0)) self:jump(-1)
+	if(btnp(1)) self:jump(1)
+	if(btnp(2)) self:leap()
+
+	getmetatable(player).update(self)
+	self:update_jump()
+
+	if(self.y - self.sprite.h > 127) then
+		sfx(2)
+	-- only start player at the very beginning the first time
+		game:reset(200)
+		return
+	end
+
+	if(self.x > game.x + 110) then
+		game:scoot(16)
+	end
 end
 
 function _init()
