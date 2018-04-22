@@ -158,11 +158,13 @@ function game:load_area(id, from_door)
 		dooridx += 1
 	end
 
+	self:load_items()
+
 	self.x = m.x*8
 	local text = {msg=a.intro, col=7, x=self.x}
-	if(a.intro_offset) then
-		text.x += a.intro_offset*8
-		text.w = 127-a.intro_offset*8
+	if(m.text_offset) then
+		text.x += m.text_offset*8
+		text.w = 127-m.text_offset*8
 	end
 	self.texts = {text}
 	self.to_scoot = 0
@@ -177,12 +179,25 @@ function game:load_area(id, from_door)
 end
 function game:load_items()
 	self.items = {}
-	for name,info in pairs(self.cur_area.items) do
+	for info in all(self.cur_area.items) do
+		local i = exists(info[2]*8,info[3]*8,info[4]*8,info[5]*8)
+		i.name = info[1]
+		i.message = info[6]
+		add(self.items, i)
 	end
 end
 function game:add_door(label,di,idx)
 		local dc = self.cur_map.doors[idx]
 		add(self.doors, door(dc[1]*8,dc[2]*8,label,di))
+end
+function game:show_message(msg, duration)
+	local m = {
+		msg=msg,
+		frames=duration*30,
+		x=max(self.x,self:xmin() + self.cur_map.text_offset*8),
+	}
+	m.w = 127-(m.x-self:xmin())
+	add(self.texts, m)
 end
 function game:inspect_door(d)
 	self.texts = {
@@ -217,19 +232,22 @@ function game:draw()
 	map(0,0,0,0,128,32,1)
 	foreach(self.doors, function(t) t:draw() end)
 	self.player:draw()
-	for c in all(self.cats) do
-		c:draw()
-	end
+	for c in all(self.cats) do c:draw() end
+	for i in all(self.items) do i:draw() end
 	cury = 1
 	for t in all(self.texts) do
-		local tw = t.w
-		if(not tw) tw=127
-		local c = t.col
-		if(not c) c=7
+		if(not t.duration or t.duration > 0) then
+			local tw = t.w
+			if(not tw) tw=127
+			local c = t.col
+			if(not c) c=7
 
-		local w = wrap(t.msg,tw)
-		print(w.text,t.x+1,cury,c)
-		cury += w.lines*6
+			local w = wrap(t.msg,tw)
+			print(w.text,t.x+1,cury,c)
+			cury += w.lines*6
+
+			if(t.duration) t.duration -= 1
+		end
 	end
 	if(self.debug!="") game:draw_debug()
 end
@@ -396,6 +414,12 @@ function exists:intersects(other)
 	end
 	return false
 end
+function exists:draw()
+	if(true) then
+		local bb=self:bb()
+		rect(bb.w,bb.n,bb.e,bb.s,8)
+	end
+end
 
 visible = class(exists)
 function visible:constructor(x,y,sprite)
@@ -404,6 +428,7 @@ function visible:constructor(x,y,sprite)
 end
 function visible:draw()
 	self.sprite:draw(self.x, self.y)
+	super(visible).draw(self)
 end
 
 door = class(visible)
@@ -685,6 +710,7 @@ player = class(frog)
 function player:constructor(...)
 	super(player, self, ...)
 	self.last_door = nil
+	self.items = {}
 end
 function player:update()
 	if(btnp(0)) self:jump(-1)
@@ -723,6 +749,10 @@ function player:inspect()
 		end
 	end
 	local item = game:player_item()
+	if(item) then
+		game:show_message(item.message, 5)
+		game:show_message("you found a "..item.name.."!", 5)
+	end
 end
 
 function _init()
