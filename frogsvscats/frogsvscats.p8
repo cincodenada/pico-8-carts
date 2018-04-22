@@ -17,6 +17,10 @@ function class(superclass)
 	setmetatable(cls, superclass)
 	return cls
 end
+function super(parent, self, ...)
+	if(not self) return getmetatable(parent)
+	getmetatable(parent).constructor(self, ...)
+end
 
 function wrap(text, width)
 	local charwidth = flr(width/4)
@@ -382,9 +386,8 @@ end
 
 cat = class(entity)
 function cat:constructor(x,y)
-	getmetatable(cat).constructor(self, x, y,
-		sprite(2, 2, {64,66,68,70,72})
-	)
+	super(cat, self,
+		x, y, sprite(2, 2, {64,66,68,70,72}))
 	self:animate(true)
 end
 function cat:update()
@@ -402,7 +405,7 @@ function cat:update()
 		end
 	end
 
-	getmetatable(cat).update(self)
+	super(cat).update(self)
 
 	if(self.cur_move) then
 		if(self.collided) self.cur_move.vx *= -1
@@ -412,9 +415,8 @@ end
 
 frog = class(entity)
 function frog:constructor(x,y)
-	getmetatable(frog).constructor(self, x, y,
-		sprite(2, 2, {0,2,4,6,8,10,12,14,32,34,36,38,40,42,44})
-	)
+	super(frog, self,
+		x, y, sprite(2, 2, {0,2,4,6,8,10,12,14,32,34,36,38,40,42,44}))
 end
 function frog:base_fpf() return 1 end
 function frog:jump(dir)
@@ -476,7 +478,7 @@ end
 
 player = class(frog)
 function player:constructor(...)
-	getmetatable(player).constructor(self, ...)
+	super(player, self, ...)
 end
 function player:update()
 	if(btnp(0)) self:jump(-1)
@@ -484,7 +486,7 @@ function player:update()
 	if(btnp(2)) self:leap()
 	if(btnp(4)) self:leap(true)
 
-	getmetatable(player).update(self)
+	super(player).update(self)
 	self:update_jump()
 
 	if(self.y - self.sprite.h > 127) then
