@@ -152,6 +152,8 @@ function entity:update()
 		if(abs(self.x - self.cur_move.x0) >= abs(self.cur_move.dx)) self.cur_move.vx = 0
 		if(abs(self.y - self.cur_move.y0) >= abs(self.cur_move.dy)) self.cur_move.vy = 0
 		if(self.cur_move.vx == 0 and self.cur_move.vy == 0) self.cur_move = nil
+	else
+		if(self:is_floating()) self.y += 1
 	end
 end
 -- relative to facing!
@@ -164,6 +166,11 @@ function entity:add_move(dx,dy,vx,vy)
 end
 function entity:replace_move(dx,dy,vx,vy)
 	self.cur_move = { dx=dx*self.sprite.facing, dy=dy, vx=vx*self.sprite.facing, vy=vy, x0=self.x, y0=self.y }
+end
+function entity:is_floating()
+	local on_spr=mget(flr(self.x/8), flr(self.y/8))
+	if(on_spr == 0) return true
+	return false
 end
 
 frog = class(entity)
