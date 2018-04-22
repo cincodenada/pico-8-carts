@@ -123,18 +123,44 @@ function sprite:adj(n)
 		y=shr(shl(flagbyte, 12), 12)
 	}
 end
+function sprite:cur_sprite()
+	return self.frames[self:frame()+1]
+end
+function sprite:flag(n)
+	-- for now only support top row
+	local sprite_num = flr(n/8)
+	return fget(self:cur_sprite() + sprite_num, n%8)
+end
 
 entity = class()
 function entity:constructor(x, y, sprite)
 	self.x, self.y, self.sprite = x, y, sprite
+	self.cur_move = nil
+	self.next_move = nil
 end
 function entity:draw()
 	self.sprite:draw(self.x, self.y)
+end
+function entity:update()
+	if(self.next_move and not self.cur_move) then
+		self.cur_move = self.next_move
+		self.next_move = nil
+	end
+	if(self.cur_move) then
+		self.x += self.cur_move.vx
+		self.y += self.cur_move.vy
+		if(abs(self.x - self.cur_move.x0) >= abs(self.cur_move.dx)) self.cur_move.vx = 0
+		if(abs(self.y - self.cur_move.y0) >= abs(self.cur_move.dy)) self.cur_move.vy = 0
+		if(self.cur_move.vx == 0 and self.cur_move.vy == 0) self.cur_move = nil
+	end
 end
 -- relative to facing!
 function entity:move(dx,dy)
 	self.x += dx*self.sprite.facing
 	self.y += dy*self.sprite.facing
+end
+function entity:add_move(dx,dy,vx,vy)
+	if(not self.next_move) self.next_move = { dx=dx, dy=dy, vx=vx, vy=vy, x0=self.x, y0=self.y }
 end
 
 frog = class(entity)
@@ -151,22 +177,10 @@ end
 function player:update()
 	if(btnp(0)) self:jump(-1)
 	if(btnp(1)) self:jump(1)
+	if(btnp(2)) self:leap()
 
-	if(self.jumping) then
-		if(self.sprite.cur_frame >=5 and self.sprite.cur_frame <=8) then
-			self:move(1.5,0)
-			self.sprite:move_frame(0.25)
-		else
-			self.sprite:move_frame(0.5)
-		end
-		if(self.sprite:frame() >= 13 and self.next_jump) then
-			self.sprite.cur_frame = 5
-			self.next_jump = false
-		elseif(self.sprite:frame() == 0) then
-			self.jumping = false
-			self.next_jump = false
-		end
-	end
+	self:update_jump()
+	getmetatable(player).update(self)
 
 	if(self.x > game.x + 110) then
 		game:scoot(16)
@@ -180,6 +194,40 @@ function player:jump(dir)
 	self.sprite.facing = dir
 	self.sprite:move_frame(1)
 	self.jumping = true
+end
+function player:update_jump()
+	if(self.jumping) then
+		-- Flag 8 is 2-frame sprites
+		if(self.sprite:flag(8)) then
+			self.sprite:move_frame(0.25)
+		else
+			self.sprite:move_frame(0.5)
+		end
+
+		-- Start movement
+		if(self.sprite.cur_frame==5) then
+			if(self.leaping) then
+				self:add_move(12,8,1.5,-1.5)
+			else
+				self:add_move(12,0,1,0)
+			end
+		end
+
+		-- Manage start/end of jump
+		if(self.sprite:frame() >= 13 and self.next_jump) then
+			self.sprite.cur_frame = 5
+			self.next_jump = false
+			self.leaping = false
+		elseif(self.sprite:frame() == 0) then
+			self.jumping = false
+			self.next_jump = false
+			self.leaping = false
+		end
+	end
+end
+function player:leap()
+	self.leaping = true
+	self:jump(1)
 end
 
 function _init()
@@ -399,7 +447,7 @@ __label__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 
 __gff__
-000000001000100010002000310011000000000000000000000000000000000000001000f000f000f0000000f000f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000000001000100010002001310111010000000000000000000000000000000000011000f000f000f0000000f000f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
