@@ -87,6 +87,7 @@ local lore = {
 		{
 			mapid = 2,
 			intro = "there's a nice stream here, it's cool on your froggy feet.",
+			intro_offset=4,
 			links = {
 				south = {"an open field.",1},
 			},
@@ -103,7 +104,7 @@ local lore = {
 		{
 			x=32,y=0,w=16,
 			px=5,py=0,
-			cats = {{25,11}},
+			cats = {{39,13}},
 			doors = {{33,4},{33,10},{45,13}},
 		},
 	},
@@ -153,7 +154,12 @@ function game:load_area(id, from_door)
 	end
 
 	self.x = m.x*8
-	self.texts = {{msg=a.intro, col=7, x=self.x}}
+	local text = {msg=a.intro, col=7, x=self.x}
+	if(a.intro_offset) then
+		text.x += a.intro_offset*8
+		text.w = 127-a.intro_offset*8
+	end
+	self.texts = {text}
 	self.to_scoot = 0
 
 	if(player_door) then
@@ -206,9 +212,12 @@ function game:draw()
 	end
 	cury = 1
 	for t in all(self.texts) do
-		local w = wrap(t.msg,127)
+		local tw = t.w
+		if(not tw) tw=127
 		local c = t.col
 		if(not c) c=7
+
+		local w = wrap(t.msg,tw)
 		print(w.text,t.x+1,cury,c)
 		cury += w.lines*6
 	end
