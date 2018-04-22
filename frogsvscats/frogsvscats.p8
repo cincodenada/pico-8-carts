@@ -71,10 +71,12 @@ local game = {
 	x=0, y=0,
 	texts = {},
 	to_scoot = 0,
-	debug_blocks = {}
+	debug_blocks = {},
+	cats = {},
 }
 function game:reset()
 	self.player = player(1,115)
+	add(self.cats, cat(200,75))
 	self.texts = {{
 		x=1,y=1,col=7,
 		msg="you wake up in a bright field. you attempt to walk forward, but find that you feel a little...hoppy. ahead, you see movement in the distance."
@@ -85,6 +87,9 @@ end
 function game:update()
 	self.debug_blocks = {}
 	self.player:update()
+	for c in all(self.cats) do
+		c:update()
+	end
 	if(self.to_scoot > 0) then
 
 		self.cur_move = nil
@@ -184,11 +189,14 @@ function entity:update()
 	if(self.cur_move) then
 		self.x += self.cur_move.vx
 		self.y += self.cur_move.vy
-		self.cur_move.dx -= abs(self.cur_move.vx)
-		self.cur_move.dy -= abs(self.cur_move.vy)
-		if(self.cur_move.dx <= 0) self.cur_move.vx = 0
-		if(self.cur_move.dy <= 0) self.cur_move.vy = 0
-		if(self.cur_move.vx == 0 and self.cur_move.vy == 0) self.cur_move = nil
+		-- If we have limits check them
+		if(self.cur_move.dx and self.cur_move.dy) then
+			self.cur_move.dx -= abs(self.cur_move.vx)
+			self.cur_move.dy -= abs(self.cur_move.vy)
+			if(self.cur_move.dx <= 0) self.cur_move.vx = 0
+			if(self.cur_move.dy <= 0) self.cur_move.vy = 0
+			if(self.cur_move.vx == 0 and self.cur_move.vy == 0) self.cur_move = nil
+		end
 	else
 		if(self:is_floating()) self.y += 1.5
 	end
@@ -249,6 +257,23 @@ function entity:bb()
 		e=self.x+self.sprite.w-1,
 		w=self.x
 	}
+end
+
+cat = class(entity)
+function cat:constructor(x,y)
+	getmetatable(cat).constructor(self, x, y,
+		sprite(2, 2, {64,66,68,70,72})
+	)
+	self.cur_move = {vx=1,vy=0}
+end
+function cat:update()
+	if(self.cur_move.vx < 0) then
+		if(not game:is_colliding(self.x-1,self.y)) self.cur_move.vx *= -1
+	elseif(self.cur_move.vx > 0) then
+		if(not game:is_colliding(self.x+self.w,self.y)) self.cur_move.vx *= -1
+	end
+	
+	getmetatable(cat).update(self)
 end
 
 frog = class(entity)
