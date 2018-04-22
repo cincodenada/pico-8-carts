@@ -146,8 +146,11 @@ function game:add_door(di,idx)
 		local dc = self.cur_map.doors[idx]
 		add(self.doors, door(dc[1]*8,dc[2]*8,di))
 end
-function game:inspect_door(idx)
-	self.texts = {{msg=self.doors[idx].text, col=7, x=self.x}}
+function game:inspect_door(d)
+	self.texts = {
+		{msg=d.text, col=7, x=self.x},
+		{msg="press O/X again to enter", col=7, x=self.x+5}
+	}
 end
 function game:update()
 	self.debug_blocks = {}
@@ -220,7 +223,7 @@ function game:is_colliding(x,y,x2,y2)
 	return ret
 end
 function game:player_door()
-	for d in all(self.cur_map.doors) do
+	for d in all(self.doors) do
 		if(d:intersects(self.player)) return d
 	end
 end
@@ -613,7 +616,7 @@ function player:update()
 	if(btnp(1)) self:jump(1)
 	if(btnp(2)) self:leap(btn(3))
 
-	if(btnp(3)) self:check_doors()
+	if(btnp(4)) self:check_doors()
 
 	super(player).update(self)
 	self:update_jump()
@@ -633,8 +636,6 @@ function player:update()
 end
 function player:check_doors()
 	local door = game:player_door()
-	print(door)
-	stop(door.label)
 	if(door) then
 		if(self.last_door == door) then
 			-- go in
