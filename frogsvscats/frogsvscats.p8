@@ -74,7 +74,7 @@ local game = {
 	debug_blocks = {}
 }
 function game:reset()
-	self.player = player(1,120)
+	self.player = player(1,-10)
 	self.texts = {{
 		x=1,y=1,col=7,
 		msg="you wake up in a bright field. you attempt to walk forward, but find that you feel a little...hoppy. ahead, you see movement in the distance."
@@ -97,6 +97,9 @@ function game:draw()
 	for t in all(self.texts) do
 		print(wrap(t.msg, 127).text, t.x, t.y, t.col)
 	end
+	--game:draw_debug()
+end
+function game:draw_debug()
 	for b in all(self.debug_blocks) do
 		spr(82+b.s,b.x*8,b.y*8)
 	end
@@ -179,7 +182,7 @@ function entity:update()
 		if(abs(self.y - self.cur_move.y0) >= abs(self.cur_move.dy)) self.cur_move.vy = 0
 		if(self.cur_move.vx == 0 and self.cur_move.vy == 0) self.cur_move = nil
 	else
-		if(self:is_floating()) self.y += 1
+		if(self:is_floating()) self.y += 1.5
 	end
 
 	self:check_collisions()
@@ -241,6 +244,7 @@ function player:update()
 	end
 end
 function player:jump(dir)
+	if(self:is_floating()) return
 	if(self.jumping) then
 		if(dir == self.sprite.facing) then
 			self.next_jump = dir
