@@ -171,7 +171,7 @@ function sprite:frame() return flr(self.cur_frame) end
 function sprite:draw(x, y)
 	local flipped = (self.facing==-1)
 	local fidx = self:frame()+1
-	-- TODO: this should be speed-dependendent and doesn't work
+	-- todo: this should be speed-dependendent and doesn't work
 	--local adj = self:adj(fidx)
 	--x += adj.x - 1
 	--y += adj.y + 1
