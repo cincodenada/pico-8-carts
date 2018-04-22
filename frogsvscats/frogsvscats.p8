@@ -148,8 +148,8 @@ function game:add_door(di,idx)
 end
 function game:inspect_door(d)
 	self.texts = {
-		{msg=d.text, col=7, x=self.x},
-		{msg="press O/X again to enter", col=7, x=self.x+5}
+		{msg="you look "..d.label..". you see "..d.text, col=7, x=self.x},
+		{msg="press o/x again to enter", col=7, x=self.x+5}
 	}
 end
 function game:update()
@@ -174,10 +174,10 @@ function game:draw()
 	for c in all(self.cats) do
 		c:draw()
 	end
-	cury = 0
+	cury = 1
 	for t in all(self.texts) do
 		local w = wrap(t.msg,127)
-		print(w.text,t.x,cury,t.col)
+		print(w.text,t.x+1,cury,t.col)
 		cury += w.lines*6
 	end
 	if(self.debug!="") game:draw_debug()
@@ -301,9 +301,6 @@ function visible:constructor(x,y,sprite)
 end
 function visible:draw()
 	self.sprite:draw(self.x, self.y)
-	local rc=8
-	if(self:intersects(game.player)) rc=11
-	rect(self:b(0),self:b(2),self:b(1),self:b(3),rc)
 end
 function visible:center()
 	return {
@@ -574,7 +571,7 @@ function frog:update_jump()
 			-- start movement
 			if(self.leaping) then
 				if(self.leaping_up) then
-					self:set_frame_slow(5,8,4)
+					self:set_frame_slow(5,10,4)
 					self:replace_move(0,24,0,-2)
 				else
 					self:replace_move(16,8,1.5,-1)
