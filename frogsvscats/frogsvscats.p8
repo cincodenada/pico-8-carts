@@ -73,9 +73,11 @@ local game = {
 	to_scoot = 0,
 	debug_blocks = {},
 	cats = {},
+	debug = "",
+	cameras = {}
 }
 function game:reset(start_x)
-	if(not start_x) start_x = 0
+	if(not start_x) start_x = 75
 	self.player = player(start_x+1,50)
 	add(self.cats, cat(20,75))
 	self.texts = {{
@@ -85,8 +87,11 @@ function game:reset(start_x)
 	self.to_scoot = 0
 	self.x = start_x
 end
+function game:save_camera() add(self.cameras, peek4(0x5f28)) camera() end
+function game:load_camera() poke4(0x5f28, self.cameras[#self.cameras]) self.cameras[#self.cameras] = nil end
 function game:update()
 	self.debug_blocks = {}
+	self.debug = ""
 	self.player:update()
 	for c in all(self.cats) do
 		c:update()
@@ -109,11 +114,21 @@ function game:draw()
 	for t in all(self.texts) do
 		print(wrap(t.msg, 127).text, t.x, t.y, t.col)
 	end
-	--game:draw_debug()
+	game:draw_debug()
+end
+function game:dbg(txt)
+	self.debug = self.debug..txt.."\n"
 end
 function game:draw_debug()
 	for b in all(self.debug_blocks) do
 		spr(82+b.s,b.x*8,b.y*8)
+	end
+	if(#self.debug > 0) then
+		self:save_camera()
+		camera(0,0)
+		rectfill(0,0,128,50,0)
+		print(self.debug,1,0,7)
+		self:load_camera()
 	end
 end
 function game:scoot(dist)
@@ -240,11 +255,15 @@ function entity:update_pos()
 end
 function entity:update_speed()
 	-- if we have limits check them
-	if(self.cur_move and self.cur_move.dx and self.cur_move.dy) then
-		self.cur_move.dx -= abs(self.cur_move.vx/self.slow)
-		self.cur_move.dy -= abs(self.cur_move.vy/self.slow)
-		if(self.cur_move.dx <= 0) self.cur_move.vx = 0
-		if(self.cur_move.dy <= 0) self.cur_move.vy = 0
+	if(self.cur_move) then
+		if(self.cur_move.dx) then
+			self.cur_move.dx -= abs(self.cur_move.vx/self.slow)
+			if(self.cur_move.dx <= 0) self.cur_move.vx = 0
+		end
+		if(self.cur_move.dy) then
+			self.cur_move.dy -= abs(self.cur_move.vy/self.slow)
+			if(self.cur_move.dy <= 0) self.cur_move.vy = 0
+		end
 		if(self.cur_move.vx == 0 and self.cur_move.vy == 0) self.cur_move = nil
 	end
 end
@@ -326,12 +345,11 @@ function entity:check_collisions()
 			--self.y=cblock.y*8+8+self.h
 		end
 
-		if(self.cur_move and (not self.cur_move.vx == 0)) then
-			--printh("cb:"..cblock.y.."/"..(cblock.y*8).." sy:"..self.y.." bb.s:"..bb.s,"log")
+		if(self.cur_move and self.cur_move.vx != 0) then
 			if(self:contains_x(cblock.x*8)) then
 				self.x=cblock.x*8-self.w-1
 			elseif(self:contains_x(cblock.x*8+7)) then
-				self.x=cblock.x*8+8
+				self.x=cblock.x*8+7+1
 			end
 		end
 	end
