@@ -574,8 +574,15 @@ function player:update()
 		return
 	end
 
-	if(self.x > game.x + 110) then
-		game:scoot(16)
+	if(self.x < game.cur_map.x) self.x = game.cur_map.x
+	if(self.x+self.w >= game.cur_map.x+game.cur_map.w) then
+		self.x = game.cur_map.x+game.cur_map.w-self.w-1
+	end
+	
+	if(self.x > game.x + 128-self.w) then
+		game:scoot(self.w)
+	elseif(self.x < game.x+self.w) then
+		game:scoot(-self.w)
 	end
 end
 
