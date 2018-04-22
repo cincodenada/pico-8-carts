@@ -148,13 +148,22 @@ function sprite:draw(x, y)
 	local flipped = (self.facing==-1)
 	local fidx = self:frame()+1
 	local adj = self:adj(fidx)
-	spr(self.frames[fidx], x+adj.x, y-self.h*8-adj.y, self.w, self.h, flipped)
+	if(self.cur_move) then
+		x += (adj.x - self.cur_move.vx/self.slow)
+		y += (adj.y + self.cur_move.vy/self.slow)
+	end
+	spr(self.frames[fidx], x, y-self.h*8, self.w, self.h, flipped)
 end
 function sprite:move_frame(howmany)
 	self.cur_frame += howmany
-	self.cur_frame %= #self.frames
+	-- manually set to zero to deal with fractional stuff
+	if(self.cur_frame >= #self.frames) self.cur_frame = 0
 end
 -- this only works for 2x2 sprites!
+-- flags store how much the sprite should move
+-- to stay with animation per frame
+--
+-- this gets our adjustment for this frame
 function sprite:adj(n)
 	-- sprite with adjustment data is the lower-left sprite
 	local adjsprite = self.frames[n] + 16
@@ -185,6 +194,7 @@ function entity:constructor(x, y, sprite)
 		looping = false,
 		frame = 0,
 	}
+	self.slow = 1
 end
 function entity:draw()
 	self.sprite:draw(self.x, self.y)
@@ -201,12 +211,12 @@ function entity:update_pos()
 		self.next_move = nil
 	end
 	if(self.cur_move) then
-		self.x += self.cur_move.vx
-		self.y += self.cur_move.vy
+		self.x += self.cur_move.vx/self.slow
+		self.y += self.cur_move.vy/self.slow
 		-- if we have limits check them
 		if(self.cur_move.dx and self.cur_move.dy) then
-			self.cur_move.dx -= abs(self.cur_move.vx)
-			self.cur_move.dy -= abs(self.cur_move.vy)
+			self.cur_move.dx -= abs(self.cur_move.vx/self.slow)
+			self.cur_move.dy -= abs(self.cur_move.vy/self.slow)
 			if(self.cur_move.dx <= 0) self.cur_move.vx = 0
 			if(self.cur_move.dy <= 0) self.cur_move.vy = 0
 			if(self.cur_move.vx == 0 and self.cur_move.vy == 0) self.cur_move = nil
@@ -219,12 +229,12 @@ function entity:update_anim()
 	if(self.anim_state.active) then
 		-- flag 8 is 2-frame sprites
 		if(self.sprite:flag(8)) then
-			self.sprite:move_frame(0.5)
+			self.sprite:move_frame(0.5/self.slow)
 		else
-			self.sprite:move_frame(1)
+			self.sprite:move_frame(1/self.slow)
 		end
 
-		if(not self.anim_state.looping and self.sprite:frame()==0) then
+		if(not self.anim_state.looping and self.sprite.cur_frame==0) then
 			self.anim_state.active = false
 		end
 	end
@@ -335,8 +345,8 @@ function player:update()
 	if(btnp(1)) self:jump(1)
 	if(btnp(2)) self:leap()
 
-	self:update_jump()
 	getmetatable(player).update(self)
+	self:update_jump()
 
 	if(self.y - self.sprite.h > 127) then
 		sfx(2)
@@ -360,27 +370,26 @@ function player:jump(dir)
 	end
 	if(dir) self.sprite.facing = dir
 	self.jumping = true
-	self.anim_state.active = true
+
+	-- start movement
+	if(self.leaping) then
+		self:replace_move(16,8,1,-1)
+	else
+		self:replace_move(16,0,1,0)
+	end
+
+	self:animate(false)
 	sfx(0)
 end
 function player:update_jump()
 	if(self.jumping) then
-		-- start movement
-		if(self.sprite:frame()==5) then
-			if(self.leaping) then
-				self:replace_move(16,8,1.5,-1)
-			else
-				self:replace_move(16,0,1.5,0)
-			end
-		end
-
 		-- manage start/end of jump
 		if(self.sprite:frame() >= 13 and self.next_jump) then
 			self.sprite.cur_frame = 4
 			self.next_jump = false
 			self.leaping = false
 			sfx(0)
-		elseif(self.sprite:frame() == 0) then
+		elseif(self.sprite.cur_frame == 0) then
 			self.jumping = false
 			self.next_jump = false
 			self.leaping = false
