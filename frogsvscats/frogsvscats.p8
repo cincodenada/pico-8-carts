@@ -301,6 +301,9 @@ function visible:constructor(x,y,sprite)
 end
 function visible:draw()
 	self.sprite:draw(self.x, self.y)
+	local rc=8
+	if(self:intersects(game.player)) rc=11
+	rect(self:b(0),self:b(2),self:b(1),self:b(3),rc)
 end
 function visible:center()
 	return {
@@ -331,16 +334,15 @@ end
 function visible:intersects(other)
 	local me = self:bb()
 	local them = other:bb()
-	-- Maybe not super efficient
+	-- maybe not super efficient
 	-- but should do the trick
-	if(self:contains_x(them.e) or
-		 self:contains_x(them.w) or
-		 self:contains_y(them.n) or
-		 self:contains_y(them.s) or
-		 other:contains_x(me.e) or
-		 other:contains_x(me.w) or
-		 other:contains_y(me.n) or
-		 other:contains_y(me.s)) then
+	if((
+	    (self:contains_x(them.e) or self:contains_x(them.w))
+	     and (self:contains_y(them.n) or self:contains_y(them.s))
+	   ) or (
+	    (other:contains_x(me.e) or other:contains_x(me.w))
+	     and (other:contains_y(me.n) or other:contains_y(me.s))
+	   )) then
 		return true
 	end
 	return false
