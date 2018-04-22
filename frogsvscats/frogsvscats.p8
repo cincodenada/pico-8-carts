@@ -155,9 +155,17 @@ function sprite:draw(x, y)
 	spr(self.frames[fidx], x, y-self.h*8, self.w, self.h, flipped)
 end
 function sprite:move_frame(howmany)
+	self.last_frame = self.cur_frame
+	self.just_looped = false
 	self.cur_frame += howmany
 	-- manually set to zero to deal with fractional stuff
-	if(self.cur_frame >= #self.frames) self.cur_frame = 0
+	if(self.cur_frame >= #self.frames) then
+		self.cur_frame = 0
+		self.just_looped = true
+	end
+end
+function sprite:entered(frame)
+	return (self:frame() >= frame and (flr(self.last_frame) < frame or self.just_looped))
 end
 -- this only works for 2x2 sprites!
 -- flags store how much the sprite should move
@@ -234,7 +242,7 @@ function entity:update_anim()
 			self.sprite:move_frame(1/self.slow)
 		end
 
-		if(not self.anim_state.looping and self.sprite.cur_frame==0) then
+		if(not self.anim_state.looping and self.sprite:entered(0)) then
 			self.anim_state.active = false
 		end
 	end
@@ -389,25 +397,27 @@ function player:jump(dir)
 	if(dir) self.sprite.facing = dir
 	self.jumping = true
 
-	-- start movement
-	if(self.leaping) then
-		self:replace_move(16,8,1,-1)
-	else
-		self:replace_move(16,0,1,0)
-	end
-
 	self:animate(false)
 	sfx(0)
 end
 function player:update_jump()
 	if(self.jumping) then
 		-- manage start/end of jump
-		if(self.sprite:frame() >= 13 and self.next_jump) then
+		if(self.sprite:entered(5)) then
+			-- start movement
+			if(self.leaping) then
+				self:replace_move(16,8,1.5,-1)
+			else
+				self:replace_move(16,0,1.5,0)
+			end
+		end
+
+		if(self.sprite:entered(13) and self.next_jump) then
 			self.sprite.cur_frame = 4
 			self.next_jump = false
 			self.leaping = false
 			sfx(0)
-		elseif(self.sprite.cur_frame == 0) then
+		elseif(self.sprite:entered(0)) then
 			self.jumping = false
 			self.next_jump = false
 			self.leaping = false
