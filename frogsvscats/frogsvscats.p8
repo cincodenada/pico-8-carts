@@ -156,6 +156,8 @@ function sprite:draw(x, y)
 	spr(self.frames[fidx], x, y-self.h*8, self.w, self.h, flipped)
 end
 function sprite:move_frame(howmany)
+	if(howmany < 0) stop("not supported!")
+	if(#self.frames == 5) printh(self.cur_frame.."+"..howmany.."frames")
 	self.last_frame = self.cur_frame
 	self.just_looped = false
 	self.cur_frame += howmany
@@ -163,6 +165,15 @@ function sprite:move_frame(howmany)
 	if(self.cur_frame >= #self.frames) then
 		self.cur_frame = 0
 		self.just_looped = true
+	end
+end
+function sprite:set_frame(towhat)
+	if(towhat < #self.frames) then
+		if(towhat < self.cur_frame) then
+			-- hmm
+			self.just_looped = true
+		end
+		self.cur_frame = towhat
 	end
 end
 function sprite:entered(frame)
@@ -253,7 +264,7 @@ function entity:update_anim()
 end
 function entity:fpf()
 	if(self.cur_move) then
-		return self.cur_move.vx
+		return abs(self.cur_move.vx)
 	else
 		return 1
 	end
