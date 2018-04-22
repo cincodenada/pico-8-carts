@@ -74,15 +74,16 @@ local game = {
 	debug_blocks = {},
 	cats = {},
 }
-function game:reset()
-	self.player = player(1,115)
+function game:reset(start_x)
+	if(not start_x) start_x = 0
+	self.player = player(start_x+1,50)
 	add(self.cats, cat(20,75))
 	self.texts = {{
-		x=1,y=1,col=7,
+		x=start_x+1,y=1,col=7,
 		msg="you wake up in a bright field. you attempt to walk forward, but find that you feel a little...hoppy. ahead, you see movement in the distance."
 	}}
 	self.to_scoot = 0
-	self.x = 0
+	self.x = start_x
 end
 function game:update()
 	self.debug_blocks = {}
@@ -387,7 +388,7 @@ function player:update()
 
 	if(self.y - self.sprite.h > 127) then
 		sfx(2)
-		game:reset()
+		game:reset(200)
 		return
 	end
 
