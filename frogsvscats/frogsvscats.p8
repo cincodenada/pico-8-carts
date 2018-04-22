@@ -157,10 +157,13 @@ end
 -- relative to facing!
 function entity:move(dx,dy)
 	self.x += dx*self.sprite.facing
-	self.y += dy*self.sprite.facing
+	self.y += dy
 end
 function entity:add_move(dx,dy,vx,vy)
-	if(not self.next_move) self.next_move = { dx=dx, dy=dy, vx=vx, vy=vy, x0=self.x, y0=self.y }
+	if(not self.next_move) self.next_move = { dx=dx*self.sprite.facing, dy=dy, vx=vx*self.sprite.facing, vy=vy, x0=self.x, y0=self.y }
+end
+function entity:replace_move(dx,dy,vx,vy)
+	self.cur_move = { dx=dx*self.sprite.facing, dy=dy, vx=vx*self.sprite.facing, vy=vy, x0=self.x, y0=self.y }
 end
 
 frog = class(entity)
@@ -187,11 +190,15 @@ function player:update()
 	end
 end
 function player:jump(dir)
-	if(self.jumping and self.sprite:frame() > 7) then
-		self.next_jump = dir
+	if(self.jumping) then
+		if(dir == self.sprite.facing) then
+			self.next_jump = dir
+		else
+			self.next_jump = nil
+		end
 		return
 	end
-	self.sprite.facing = dir
+	if(dir) self.sprite.facing = dir
 	self.sprite:move_frame(1)
 	self.jumping = true
 end
@@ -199,23 +206,23 @@ function player:update_jump()
 	if(self.jumping) then
 		-- Flag 8 is 2-frame sprites
 		if(self.sprite:flag(8)) then
-			self.sprite:move_frame(0.25)
-		else
 			self.sprite:move_frame(0.5)
+		else
+			self.sprite:move_frame(1)
 		end
 
 		-- Start movement
 		if(self.sprite.cur_frame==5) then
 			if(self.leaping) then
-				self:add_move(12,8,1.5,-1.5)
+				self:replace_move(16,8,1.5,-1)
 			else
-				self:add_move(12,0,1,0)
+				self:replace_move(16,0,1.5,0)
 			end
 		end
 
 		-- Manage start/end of jump
 		if(self.sprite:frame() >= 13 and self.next_jump) then
-			self.sprite.cur_frame = 5
+			self.sprite.cur_frame = 4
 			self.next_jump = false
 			self.leaping = false
 		elseif(self.sprite:frame() == 0) then
