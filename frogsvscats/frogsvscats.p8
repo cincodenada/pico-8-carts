@@ -258,31 +258,40 @@ function entity:is_floating()
 	return not game:is_colliding(self.x,self.y,self.x+self.w-1)
 end
 function entity:check_collisions()
+	-- resolve gravity first
 	local bb = self:bb()
 	local cblock = game:is_colliding(bb.w,bb.n,bb.e,bb.s)
 	if(cblock) then
-		self.collided = true
-		--printh("cb:"..cblock.y.."/"..(cblock.y*8).." sy:"..self.y.." bb.s:"..bb.s,"log")
-		if(cblock.y*8 <= bb.s) then
-			if(not self.cur_move or self.cur_move.vx == 0) then
-				--printh("bumped up","log")
+		-- If we're not moving (aka falling)
+		-- Or, we're moving down otherwise
+		if(not self.cur_move or (self.cur_move.vx == 0 and self.cur_move.vy >= 0)) then
+			-- If we fell through a floor, deal with that first
+			if(self:contains_y(cblock.y*8)) then
 				self.y=cblock.y*8
 			end
-		elseif(cblock.y*8+7 >= bb.n) then
-			self.y=cblock.y*8+8+self.h
+		end
+	end
+
+	-- then check to see if we're still colliding
+	bb = self:bb()
+	cblock = game:is_colliding(bb.w,bb.n,bb.e,bb.s)
+	if(cblock) then
+		self.collided = true
+		--printh("cb:"..cblock.y.."/"..(cblock.y*8).." sy:"..self.y.." bb.s:"..bb.s,"log")
+		-- We only bump up for gravity
+		if(self:contains_y(cblock.y*8+7)) then
+			--self.y=cblock.y*8+8+self.h
 		end
 
-		bb = self:bb()
 		--printh("cb:"..cblock.y.."/"..(cblock.y*8).." sy:"..self.y.." bb.s:"..bb.s,"log")
-		if(cblock.x*8 >= bb.e) then
+		if(self:contains_x(cblock.x*8)) then
 			self.x=cblock.x*8-self.w-1
-		elseif(cblock.x*8+7 <= bb.w) then
+		elseif(self:contains_x(cblock.x*8+7)) then
 			self.x=cblock.x*8+8
 		end
-
-
-		sfx(1)
 	end
+
+	if(self.collided) sfx(1)
 end
 function entity:center()
 	return {
@@ -290,12 +299,21 @@ function entity:center()
 		y=self.y - (self.sprite.h*8)/2
 	}
 end
+-- returns boundaries, idx are buttons (LRUD)
+function entity:b(idx)
+	if(idx == 0) return self.x
+	if(idx == 1) return self.x+self.w-1
+	if(idx == 2) return self.y-self.h
+	if(idx == 3) return self.y-1
+end
+function entity:contains_x(p) return (p >= self:b(0) and p <= self:b(1)) end
+function entity:contains_y(p) return (p >= self:b(2) and p <= self:b(3)) end
 function entity:bb()
 	return {
-		n=self.y-self.h,
-		s=self.y-1,
-		e=self.x+self.w-1,
-		w=self.x
+		w=self:b(0),
+		e=self:b(1),
+		n=self:b(2),
+		s=self:b(3),
 	}
 end
 
