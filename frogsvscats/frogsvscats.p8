@@ -180,12 +180,22 @@ function entity:constructor(x, y, sprite)
 	self.h = self.sprite.h*8-1
 	self.cur_move = nil
 	self.next_move = nil
+	self.anim_state = {
+		active = false,
+		looping = false,
+		frame = 0,
+	}
 end
 function entity:draw()
 	self.sprite:draw(self.x, self.y)
 end
 function entity:update()
+	self:update_pos()
+	self:update_anim()
 	self.collided = false
+	self:check_collisions()
+end
+function entity:update_pos()
 	if(self.next_move and not self.cur_move) then
 		self.cur_move = self.next_move
 		self.next_move = nil
@@ -204,8 +214,24 @@ function entity:update()
 	else
 		if(self:is_floating()) self.y += 1.5
 	end
+end
+function entity:update_anim()
+	if(self.anim_state.active) then
+		-- flag 8 is 2-frame sprites
+		if(self.sprite:flag(8)) then
+			self.sprite:move_frame(0.05)
+		else
+			self.sprite:move_frame(0.1)
+		end
 
-	self:check_collisions()
+		if(not self.anim_state.looping and flr(self.sprite.cur_frame)==0) then
+			self.anim_state.active = false
+		end
+	end
+end
+function entity:animate(looping)
+	self.anim_state.active = true
+	self.anim_state.looping = looping
 end
 -- relative to facing!
 function entity:move(dx,dy)
@@ -223,7 +249,7 @@ function entity:is_floating()
 end
 function entity:check_collisions()
 	local bb = self:bb()
-	local cblock = game:is_colliding(self.x,self.y-self.sprite.h*8,self.x+self.sprite.w*8-1,self.y+self.sprite.h*8-1)
+	local cblock = game:is_colliding(bb.w,bb.n,bb.e,bb.s)
 	if(cblock) then
 		self.collided = true
 		--printh("cb:"..cblock.y.."/"..(cblock.y*8).." sy:"..self.y.." bb.s:"..bb.s,"log")
@@ -268,12 +294,13 @@ function cat:constructor(x,y)
 	getmetatable(cat).constructor(self, x, y,
 		sprite(2, 2, {64,66,68,70,72})
 	)
+	self:animate(true)
 end
 function cat:update()
 	if(self:is_floating()) then
 		self.cur_move = nil
 	else
-		if(not self.cur_move) self.cur_move = {vx=1,vy=0}
+		if(not self.cur_move) self.cur_move = {vx=0.1,vy=0}
 	end
 
 	if(self.cur_move) then
@@ -332,19 +359,12 @@ function player:jump(dir)
 		return
 	end
 	if(dir) self.sprite.facing = dir
-	self.sprite:move_frame(1)
 	self.jumping = true
+	self.anim_state.active = true
 	sfx(0)
 end
 function player:update_jump()
 	if(self.jumping) then
-		-- flag 8 is 2-frame sprites
-		if(self.sprite:flag(8)) then
-			self.sprite:move_frame(0.5)
-		else
-			self.sprite:move_frame(1)
-		end
-
 		-- start movement
 		if(self.sprite.cur_frame==5) then
 			if(self.leaping) then
@@ -647,7 +667,7 @@ __label__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 
 __gff__
-00000000000000000000000000000000000000001000100010002001310111010000000000000000000000000000000000011000f000f000f0000000f000f00000000000000000000000000000000000000020002000100010001000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000001000100010002001310111010000000000000000000000000000000000011000f000f000f0000000f000f00000000000000000000000000000000000100020003000200010000000000000000000000000000000000000000000000000000000000000000000000000000000
 0101010000000000000000000000080800000000000000000000000000000808000000000000000000000000000008080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
