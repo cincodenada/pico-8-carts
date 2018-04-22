@@ -74,7 +74,7 @@ local game = {
 	debug_blocks = {}
 }
 function game:reset()
-	self.player = player(1,-10)
+	self.player = player(1,115)
 	self.texts = {{
 		x=1,y=1,col=7,
 		msg="you wake up in a bright field. you attempt to walk forward, but find that you feel a little...hoppy. ahead, you see movement in the distance."
@@ -183,8 +183,10 @@ function entity:update()
 	if(self.cur_move) then
 		self.x += self.cur_move.vx
 		self.y += self.cur_move.vy
-		if(abs(self.x - self.cur_move.x0) >= abs(self.cur_move.dx)) self.cur_move.vx = 0
-		if(abs(self.y - self.cur_move.y0) >= abs(self.cur_move.dy)) self.cur_move.vy = 0
+		self.cur_move.dx -= abs(self.cur_move.vx)
+		self.cur_move.dy -= abs(self.cur_move.vy)
+		if(self.cur_move.dx <= 0) self.cur_move.vx = 0
+		if(self.cur_move.dy <= 0) self.cur_move.vy = 0
 		if(self.cur_move.vx == 0 and self.cur_move.vy == 0) self.cur_move = nil
 	else
 		if(self:is_floating()) self.y += 1.5
@@ -198,29 +200,37 @@ function entity:move(dx,dy)
 	self.y += dy
 end
 function entity:add_move(dx,dy,vx,vy)
-	if(not self.next_move) self.next_move = { dx=dx*self.sprite.facing, dy=dy, vx=vx*self.sprite.facing, vy=vy, x0=self.x, y0=self.y }
+	if(not self.next_move) self.next_move = { dx=abs(dx), dy=abs(dy), vx=vx*self.sprite.facing, vy=vy, x0=self.x, y0=self.y }
 end
 function entity:replace_move(dx,dy,vx,vy)
-	self.cur_move = { dx=dx*self.sprite.facing, dy=dy, vx=vx*self.sprite.facing, vy=vy, x0=self.x, y0=self.y }
+	self.cur_move = { dx=abs(dx), dy=abs(dy), vx=vx*self.sprite.facing, vy=vy, x0=self.x, y0=self.y }
 end
 function entity:is_floating()
 	return not game:is_colliding(self.x,self.y,self.sprite.w*8-1)
 end
 function entity:check_collisions()
-	local bb = self:bb()
 	local cblock = game:is_colliding(self.x,self.y-self.sprite.h*8,self.sprite.w*8-1,self.sprite.h*8-1)
+	local bb
 	if(cblock) then
+		bb = self:bb()
+		--printh("cb:"..cblock.y.."/"..(cblock.y*8).." sy:"..self.y.." bb.s:"..bb.s,"log")
+		if(cblock.y*8 <= bb.s) then
+			if(not self.cur_move or self.cur_move.vx == 0) then
+				--printh("bumped up","log")
+				self.y=cblock.y*8
+			end
+		elseif(cblock.y*8+7 >= bb.n) then
+			self.y=cblock.y*8+8+self.h
+		end
+
+		bb = self:bb()
+		--printh("cb:"..cblock.y.."/"..(cblock.y*8).." sy:"..self.y.." bb.s:"..bb.s,"log")
 		if(cblock.x*8 >= bb.e) then
-			self.x=cblock.x*8-self.w
+			self.x=cblock.x*8-self.w-1
 		elseif(cblock.x*8+7 <= bb.w) then
 			self.x=cblock.x*8+8
 		end
 
-		if(cblock.y*8 <= bb.s) then
-			self.y=cblock.y*8
-		elseif(cblock.y*8+7 >= bb.n) then
-			self.y=cblock.y*8+8+self.h
-		end
 
 		sfx(1)
 	end
