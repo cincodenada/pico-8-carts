@@ -334,31 +334,26 @@ function sprite:flag(n)
 	return fget(self:cur_sprite() + subidx, n%8)
 end
 
-visible = class()
-function visible:constructor(x,y,sprite)
-	self.x, self.y, self.sprite = x, y, sprite
-	self.w = self.sprite.w*8
-	self.h = self.sprite.h*8
+exists = class()
+function exists:constructor(x,y,w,h)
+	self.x, self.y, self.w, self.h  = x, y, w, h
 end
-function visible:draw()
-	self.sprite:draw(self.x, self.y)
-end
-function visible:center()
+function exists:center()
 	return {
 		x=self.x + self.w/2,
 		y=self.y - self.h/2
 	}
 end
 -- returns boundaries, idx are buttons (lrud)
-function visible:b(idx)
+function exists:b(idx)
 	if(idx == 0) return flr(self.x)
 	if(idx == 1) return flr(self.x+self.w-1)
 	if(idx == 2) return flr(self.y-self.h)
 	if(idx == 3) return flr(self.y-1)
 end
-function visible:contains_x(p) return (p >= self:b(0) and p <= self:b(1)) end
-function visible:contains_y(p) return (p >= self:b(2) and p <= self:b(3)) end
-function visible:bb()
+function exists:contains_x(p) return (p >= self:b(0) and p <= self:b(1)) end
+function exists:contains_y(p) return (p >= self:b(2) and p <= self:b(3)) end
+function exists:bb()
 	local c = self:center()
 	return {
 		w=self:b(0),
@@ -369,7 +364,7 @@ function visible:bb()
 		cy=flr(c.y),
 	}
 end
-function visible:intersects(other)
+function exists:intersects(other)
 	local me = self:bb()
 	local them = other:bb()
 	-- maybe not super efficient
@@ -384,6 +379,15 @@ function visible:intersects(other)
 		return true
 	end
 	return false
+end
+
+visible = class(exists)
+function visible:constructor(x,y,sprite)
+	self.sprite = sprite
+	super(visible, self, x, y, self.sprite.w*8, self.sprite.h*8)
+end
+function visible:draw()
+	self.sprite:draw(self.x, self.y)
 end
 
 door = class(visible)
