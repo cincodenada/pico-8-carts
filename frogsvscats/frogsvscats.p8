@@ -148,11 +148,10 @@ function sprite:frame() return flr(self.cur_frame) end
 function sprite:draw(x, y)
 	local flipped = (self.facing==-1)
 	local fidx = self:frame()+1
-	local adj = self:adj(fidx)
-	if(self.cur_move) then
-		x += (adj.x - self.cur_move.vx/self.slow)
-		y += (adj.y + self.cur_move.vy/self.slow)
-	end
+	-- TODO: this should be speed-dependendent and doesn't work
+	--local adj = self:adj(fidx)
+	--x += adj.x - 1
+	--y += adj.y + 1
 	spr(self.frames[fidx], x, y-self.h*8, self.w, self.h, flipped)
 end
 function sprite:move_frame(howmany)
