@@ -126,7 +126,7 @@ function game:load_area(id)
 		add(self.cats, cat(c[1]*8,c[2]*8))
 	end
 	local dooridx = 1 -- todo: randomize
-	local std = {"up","down","left","right"}
+	local std = {"north","south","east","west"}
 	for c in all(a.links[1]) do
 		self:add_door({std[dooridx], c}, dooridx)
 		dooridx += 1
@@ -135,7 +135,7 @@ function game:load_area(id)
 		self:add_door(a.links[i], dooridx)
 		dooridx += 1
 	end
-	self.texts = {{msg=a.intro, col=7}}
+	self.texts = {{msg=a.intro, col=7, x=self.x}}
 	self.to_scoot = 0
 	self.x = m.x
 	game.player.x = self.x+1
@@ -145,9 +145,7 @@ function game:add_door(di,idx)
 		add(self.doors, door(dc[1]*8,dc[2]*8,di))
 end
 function game:inspect_door(idx)
-	self.texts = {
-
-	}
+	self.texts = {{msg=self.doors[idx].text, col=7, x=self.x}}
 end
 function game:update()
 	self.debug_blocks = {}
@@ -174,7 +172,7 @@ function game:draw()
 	cury = 0
 	for t in all(self.texts) do
 		local w = wrap(t.msg,127)
-		print(w.text,0,cury,t.col)
+		print(w.text,t.x,cury,t.col)
 		cury += w.lines*6
 	end
 	if(self.debug!="") game:draw_debug()
@@ -219,8 +217,9 @@ function game:is_colliding(x,y,x2,y2)
 	end
 	return ret
 end
-function game:door_at(bb)
+function game:player_door()
 	for d in all(self.cur_map.doors) do
+		if(d:intersects(self.player)) return d
 	end
 end
 
@@ -323,6 +322,23 @@ function visible:bb()
 		cx=flr(c.x),
 		cy=flr(c.y),
 	}
+end
+function visible:intersects(other)
+	local me = self:bb()
+	local them = other:bb()
+	-- Maybe not super efficient
+	-- but should do the trick
+	if(self:contains_x(them.e) or
+		 self:contains_x(them.w) or
+		 self:contains_y(them.n) or
+		 self:contains_y(them.s) or
+		 other:contains_x(me.e) or
+		 other:contains_x(me.w) or
+		 other:contains_y(me.n) or
+		 other:contains_y(me.s)) then
+		return true
+	end
+	return false
 end
 
 door = class(visible)
@@ -614,7 +630,9 @@ function player:update()
 	end
 end
 function player:check_doors()
-	local door = game:door_at(self.bb)
+	local door = game:player_door()
+	print(door)
+	stop(door.label)
 	if(door) then
 		if(self.last_door == door) then
 			-- go in
