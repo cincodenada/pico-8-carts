@@ -240,14 +240,21 @@ function entity:update_anim()
 	if(self.anim_state.active) then
 		-- flag 8 is 2-frame sprites
 		if(self.sprite:flag(8)) then
-			self.sprite:move_frame(0.5/self.slow)
+			self.sprite:move_frame(self:fpf()/2/self.slow)
 		else
-			self.sprite:move_frame(1/self.slow)
+			self.sprite:move_frame(self:fpf()/self.slow)
 		end
 
 		if(not self.anim_state.looping and self.sprite:entered(0)) then
 			self.anim_state.active = false
 		end
+	end
+end
+function entity:fpf()
+	if(self.cur_move) then
+		return self.cur_move.vx
+	else
+		return 1
 	end
 end
 function entity:animate(looping)
@@ -339,7 +346,7 @@ function cat:update()
 	if(self:is_floating()) then
 		self.cur_move = nil
 	else
-		if(not self.cur_move) self.cur_move = {vx=1,vy=0}
+		if(not self.cur_move) self.cur_move = {vx=0.5,vy=0}
 	end
 
 	if(self.cur_move) then
@@ -364,6 +371,7 @@ function frog:constructor(x,y)
 		sprite(2, 2, {0,2,4,6,8,10,12,14,32,34,36,38,40,42,44})
 	)
 end
+function frog:fpf() return 1 end
 
 player = class(frog)
 function player:constructor(...)
