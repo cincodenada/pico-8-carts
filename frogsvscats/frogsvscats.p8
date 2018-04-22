@@ -212,6 +212,7 @@ function entity:update()
 	self:update_anim()
 	self.collided = false
 	self:check_collisions()
+	self:update_speed()
 end
 function entity:update_pos()
 	if(self.next_move and not self.cur_move) then
@@ -221,16 +222,18 @@ function entity:update_pos()
 	if(self.cur_move) then
 		self.x += self.cur_move.vx/self.slow
 		self.y += self.cur_move.vy/self.slow
-		-- if we have limits check them
-		if(self.cur_move.dx and self.cur_move.dy) then
-			self.cur_move.dx -= abs(self.cur_move.vx/self.slow)
-			self.cur_move.dy -= abs(self.cur_move.vy/self.slow)
-			if(self.cur_move.dx <= 0) self.cur_move.vx = 0
-			if(self.cur_move.dy <= 0) self.cur_move.vy = 0
-			if(self.cur_move.vx == 0 and self.cur_move.vy == 0) self.cur_move = nil
-		end
 	else
 		if(self:is_floating()) self.y += 1.5
+	end
+end
+function entity:update_speed()
+	-- if we have limits check them
+	if(self.cur_move and self.cur_move.dx and self.cur_move.dy) then
+		self.cur_move.dx -= abs(self.cur_move.vx/self.slow)
+		self.cur_move.dy -= abs(self.cur_move.vy/self.slow)
+		if(self.cur_move.dx <= 0) self.cur_move.vx = 0
+		if(self.cur_move.dy <= 0) self.cur_move.vy = 0
+		if(self.cur_move.vx == 0 and self.cur_move.vy == 0) self.cur_move = nil
 	end
 end
 function entity:update_anim()
