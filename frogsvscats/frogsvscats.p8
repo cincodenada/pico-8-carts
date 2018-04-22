@@ -85,7 +85,7 @@ function game:reset(start_x)
 	if(not start_x) start_x = 75
 	self.player = player(start_x+1,50)
 	add(self.cats, cat(20,75))
-	add(self.things, door(22*8,12*8,"testing"))
+	add(self.things, door(22*8,12*8,"up"))
 	self.texts = {{
 		x=start_x+1,y=1,col=7,
 		msg="you wake up in a bright field. you attempt to walk forward, but find that you feel a little...hoppy. ahead, you see movement in the distance."
@@ -264,6 +264,7 @@ door = class(visible)
 function door:constructor(x,y,label)
 	super(door, self, x, y, sprite(2, 4, 142))
 	self.label = label
+	self.label_offset = flr(rnd(2))
 end
 function door:draw()
 	pal(14,0)
@@ -271,16 +272,17 @@ function door:draw()
 	pal(14,14)
 	if(self.label) do
 		local width=#self.label*4
+		local halfw = max(width/2, 2*4)
 		local bb = self:bb()
 		rectfill(
-			bb.cx-flr(width/2)-2,bb.n+2,
-			bb.cx+ceil(width/2),bb.n+10,15
+			bb.cx-flr(halfw)-2,bb.n+2,
+			bb.cx+ceil(halfw),bb.n+10,15
 		)
 		rect(
-		  bb.cx-flr(width/2)-2,bb.n+2,
-			bb.cx+ceil(width/2),bb.n+10,4
+		  bb.cx-flr(halfw)-2,bb.n+2,
+			bb.cx+ceil(halfw)+1,bb.n+10,4
 		)
-		print(self.label,bb.cx-flr(width/2),bb.n+4,5)
+		print(self.label,bb.cx-flr(width/2)+self.label_offset,bb.n+4,5)
 	end
 end
 
