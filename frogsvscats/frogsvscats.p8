@@ -159,7 +159,13 @@ function player:update()
 		else
 			self.sprite:move_frame(0.5)
 		end
-		if(self.sprite:frame() == 0) self.jumping = false
+		if(self.sprite:frame() >= 13 and self.next_jump) then
+			self.sprite.cur_frame = 5
+			self.next_jump = false
+		elseif(self.sprite:frame() == 0) then
+			self.jumping = false
+			self.next_jump = false
+		end
 	end
 
 	if(self.x > game.x + 110) then
@@ -167,7 +173,10 @@ function player:update()
 	end
 end
 function player:jump(dir)
-	if(self.jumping) return
+	if(self.jumping and self.sprite:frame() > 7) then
+		self.next_jump = dir
+		return
+	end
 	self.sprite.facing = dir
 	self.sprite:move_frame(1)
 	self.jumping = true
