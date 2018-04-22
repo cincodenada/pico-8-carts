@@ -91,6 +91,9 @@ local lore = {
 			links = {
 				south = {"an open field.",1},
 			},
+			items = {
+				blue_key={39,12,41,12},
+			},
 		},
 	},
 	maps = {
@@ -134,6 +137,8 @@ function game:save_camera() add(self.cameras, peek4(0x5f28)) camera() end
 function game:load_camera() poke4(0x5f28, self.cameras[#self.cameras]) self.cameras[#self.cameras] = nil end
 function game:xmin() return self.cur_map.x*8 end
 function game:xmax() return self.cur_map.x*8+self.cur_map.w*8-1 end
+-- this should probably be its own object
+-- but we're in crunch time
 function game:load_area(id, from_door)
 	local a = lore.areas[id]
 	local m = lore.maps[a.mapid]
@@ -168,6 +173,11 @@ function game:load_area(id, from_door)
 	else
 		game.player.x = self.x+m.px*8
 		game.player.y = m.py*8
+	end
+end
+function game:load_items()
+	self.items = {}
+	for name,info in pairs(self.cur_area.items) do
 	end
 end
 function game:add_door(label,di,idx)
@@ -268,6 +278,12 @@ function game:player_door()
 		if(d:intersects(self.player)) return d
 	end
 end
+function game:player_item()
+	for i in all(self.items) do
+		if(i:intersects(self.player)) return i
+	end
+end
+
 
 -- position is 1px below lower-left corner of sprite ("on the ground")
 sprite = class()
@@ -669,7 +685,7 @@ function player:update()
 	if(btnp(1)) self:jump(1)
 	if(btnp(2)) self:leap(btn(3))
 
-	if(btnp(4)) self:check_doors()
+	if(btnp(4)) self:inspect()
 
 	super(player).update(self)
 	self:update_jump()
@@ -687,7 +703,9 @@ function player:update()
 		game:scoot(-self.w)
 	end
 end
-function player:check_doors()
+function player:inspect()
+	-- could probably be more efficient
+	-- and use sprite flags here but ehhh
 	local door = game:player_door()
 	if(door) then
 		if(self.last_door == door) then
@@ -698,6 +716,7 @@ function player:check_doors()
 			game:inspect_door(door)
 		end
 	end
+	local item = game:player_item()
 end
 
 function _init()
