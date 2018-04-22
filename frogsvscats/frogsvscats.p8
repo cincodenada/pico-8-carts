@@ -86,6 +86,9 @@ function game:update()
 	self.debug_blocks = {}
 	self.player:update()
 	if(self.to_scoot > 0) then
+
+		self.cur_move = nil
+		self.next_move = nil
 		self.x += 1
 		self.to_scoot -= sgn(self.to_scoot)
 	end
@@ -164,6 +167,8 @@ end
 entity = class()
 function entity:constructor(x, y, sprite)
 	self.x, self.y, self.sprite = x, y, sprite
+	self.w = self.sprite.w*8-1
+	self.h = self.sprite.h*8-1
 	self.cur_move = nil
 	self.next_move = nil
 end
@@ -199,18 +204,39 @@ function entity:replace_move(dx,dy,vx,vy)
 	self.cur_move = { dx=dx*self.sprite.facing, dy=dy, vx=vx*self.sprite.facing, vy=vy, x0=self.x, y0=self.y }
 end
 function entity:is_floating()
-	return not game:is_colliding(self.x,self.y,self.sprite.w*8)
+	return not game:is_colliding(self.x,self.y,self.sprite.w*8-1)
 end
 function entity:check_collisions()
-	local center = self:center()
-	if(game:is_colliding(self.x,self.y-self.sprite.h*8,self.sprite.w*8-1,self.sprite.h*8-1)) then
+	local bb = self:bb()
+	local cblock = game:is_colliding(self.x,self.y-self.sprite.h*8,self.sprite.w*8-1,self.sprite.h*8-1)
+	if(cblock) then
+		if(cblock.x*8 >= bb.e) then
+			self.x=cblock.x*8-self.w
+		elseif(cblock.x*8+7 <= bb.w) then
+			self.x=cblock.x*8+8
+		end
+
+		if(cblock.y*8 <= bb.s) then
+			self.y=cblock.y*8
+		elseif(cblock.y*8+7 >= bb.n) then
+			self.y=cblock.y*8+8+self.h
+		end
+
 		sfx(1)
 	end
 end
 function entity:center()
 	return {
 		x=self.x + (self.sprite.w*8)/2,
-		y=self.y - (self.sprite.h*8)/2,
+		y=self.y - (self.sprite.h*8)/2
+	}
+end
+function entity:bb()
+	return {
+		n=self.y-self.sprite.h*8,
+		s=self.y-1,
+		e=self.x+self.sprite.w-1,
+		w=self.x
 	}
 end
 
@@ -245,7 +271,7 @@ function player:update()
 end
 function player:jump(dir)
 	if(self:is_floating()) return
-	if(self.jumping) then
+	if(self.jumping and not self.leaping) then
 		if(dir == self.sprite.facing) then
 			self.next_jump = dir
 		else
