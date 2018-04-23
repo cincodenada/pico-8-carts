@@ -732,6 +732,17 @@ function entity:check_collisions()
 	if(self.collided) sfx(1)
 end
 
+tinyfriend = class(entity)
+function tinyfriend:constructor(x,y)
+	super(tinyfriend, self,
+		x, y, sprite(1, 1, 224))
+	self:animate(true)
+end
+function tinyfriend:update()
+	super(tinyfriend).update(self)
+	if(not self:is_floating()) self.cur_move = {vy=-2,vx=0,dy=10}
+end
+
 cat = class(entity)
 function cat:constructor(x,y)
 	super(cat, self,
@@ -879,7 +890,7 @@ function player:inspect()
 		if(item.name == "locked chest") then
 			if(self:has_item("silver key")) then
 				game:show_message("you unlocked the chest! inside is a very sad small frog! you're a hero!")
-				spr(224,self.x+self.w,self.y-8)
+				add(game.cats, tinyfriend(self.x+self.w, self.y-8))
 			else
 				if(self:has_item("blue key")) game:show_message("you try the blue key, but the lock doesn't budge")
 				if(self:has_item("green key")) game:show_message("you try your green key, but the chest is unyielding")
