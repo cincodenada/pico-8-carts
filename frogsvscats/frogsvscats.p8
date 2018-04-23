@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
--- frogs vs. cats
+-- frogs vs. cats v1.0.2
 -- by joel bradshaw
 -- vim: sw=2 ts=2 sts=2 noet foldmethod=marker foldmarker=-->8,---
 function class(superclass)
@@ -170,7 +170,7 @@ local lore = {
 			items = {
 				{"silver key",55,15,3,1,""},
 			},
-			cats = {{
+			cats = {
 				{48 + flr(rnd(16)),flr(rnd(20))},
 				{48 + flr(rnd(16)),flr(rnd(20))},
 				{48 + flr(rnd(16)),flr(rnd(20))},
@@ -185,7 +185,7 @@ local lore = {
 				{48 + flr(rnd(16)),flr(rnd(20))},
 				{48 + flr(rnd(16)),flr(rnd(20))},
 				{48 + flr(rnd(16)),flr(rnd(20))},
-			}}
+			}
 		},
 		{
 			id = 7,
@@ -277,7 +277,7 @@ function game:load_area(id, from_door)
 	end
 	-- more cats?!
 	if(a.cats) then
-		for c in all(m.cats) do
+		for c in all(a.cats) do
 			add(self.cats, cat(c[1]*8,c[2]*8))
 		end
 	end
@@ -871,6 +871,8 @@ function player:update()
 	if(btnp(2)) self:leap(btn(3))
 
 	if(btnp(4)) self:inspect()
+	if(btnp(5)) self:leap(true)
+
 	if(false) then
 		next_area = game.cur_area.id+1
 		if(next_area > #lore.areas) next_area = 1
