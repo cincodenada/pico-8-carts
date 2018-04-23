@@ -251,14 +251,12 @@ local game = {
 	cur_map = nil,
 }
 function game:reset()
-	self.player = player(0,50)
-	self:load_area(2)
-	if(self.cur_area == 1) then
+	self.player = player(0,120)
+	self:load_area(1)
 	-- Override area text and player position for first play
   self.texts ={{msg="you wake up in a bright field. you attempt to walk forward, but find that you feel a little...hoppy.\nahead, you see\nmovement in the\ndistance.",x=0}}
 	self.player.x=0
 	self.player.y=120
-	end
 end
 function game:save_camera() add(self.cameras, peek4(0x5f28)) camera() end
 function game:load_camera() poke4(0x5f28, self.cameras[#self.cameras]) self.cameras[#self.cameras] = nil end
@@ -362,7 +360,7 @@ function game:update()
 	camera(self.x,0)
 end
 function game:draw()
-	map(0,0,0,0,128,32,1)
+	map(0,0,0,0,128,32,1+4)
 	foreach(self.doors, function(t) t:draw() end)
 	self.player:draw()
 	for c in all(self.cats) do c:draw() end
@@ -871,7 +869,7 @@ function player:update()
 	if(btnp(2)) self:leap(btn(3))
 
 	if(btnp(4)) self:inspect()
-	if(btnp(5)) then
+	if(false) then
 		next_area = game.cur_area.id+1
 		if(next_area > #lore.areas) next_area = 1
 		game:load_area(next_area)
@@ -970,9 +968,16 @@ function credits:draw()
 	cls()
 	self.top -= 1
 	local y = self.top
+	local wrote_something = true
 	for a in all(self.lines) do
-		if(y > 128) return
-		print(a, 64-#a*4/2, y, 7)
+		if(y+6 > 0 and y < 128) then
+			print(a, 64-#a*4/2, y, 7)
+			wrote_something = true
+		end
+	end
+	if(not wrote_something) then
+		self.countdown = nil
+		game:reset()
 	end
 end
 
