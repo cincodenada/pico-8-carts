@@ -156,7 +156,7 @@ local lore = {
 				tunnel=8
 			},
 			items = {
-				{"locked chest",55,15,3,1,""},
+				{"locked chest",55,15,3,1,"it's big, oak, and seems pretty immune to brute force. there are holes in the side, but not large enough to see anything."},
 			},
 		},
 		{
@@ -169,7 +169,7 @@ local lore = {
 				grate = 5,
 			},
 			items = {
-				{"an old scroll",55,15,3,1,""},
+				{"an old scroll",55,15,3,1,"it seems to be blank. could the developer have run out of time to do anything with it?"},
 			},
 		},
 	},
@@ -214,11 +214,13 @@ local game = {
 }
 function game:reset()
 	self.player = player(0,50)
-	self:load_area(1)
+	self:load_area(2)
+	if(self.cur_area == 1) then
 	-- Override area text and player position for first play
   self.texts ={{msg="you wake up in a bright field. you attempt to walk forward, but find that you feel a little...hoppy.\nahead, you see\nmovement in the\ndistance.",x=0}}
 	self.player.x=0
 	self.player.y=120
+	end
 end
 function game:save_camera() add(self.cameras, peek4(0x5f28)) camera() end
 function game:load_camera() poke4(0x5f28, self.cameras[#self.cameras]) self.cameras[#self.cameras] = nil end
@@ -502,7 +504,7 @@ function exists:intersects(other)
 	return false
 end
 function exists:draw()
-	if(true) then
+	if(false) then
 		local bb=self:bb()
 		rect(bb.w,bb.n,bb.e,bb.s,8)
 	end
@@ -852,8 +854,24 @@ function player:inspect()
 	local item = game:player_item()
 	if(item) then
 		game:show_message(item.message, 5)
+		if(item == "locked chest") then
+			if(self.has_item("silver key")) then
+				game:show_message("you unlocked the chest! inside is a very sad small frog! you're a hero!")
+			else
+				if(self.has_item("blue key")) game:show_message("you try the blue key, but the lock doesn't budge")
+				if(self.has_item("green key")) game:show_message("you try your green key, but the chest is unyielding")
+				game:show_message("it's pretty locked.")
+			end
+
 		game:show_message("you found a "..item.name.."!", 5)
+		add(self.items, item)
 	end
+end
+function player:has_item(name)
+	for i in self.items do
+		if(i.name == name) return true
+	end
+	return false
 end
 
 function _init()
