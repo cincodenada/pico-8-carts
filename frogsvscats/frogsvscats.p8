@@ -949,7 +949,6 @@ function _draw()
 		game:draw()
 		if(credits.countdown) then
 			credits.countdown -= 1
-			print(credits.countdown, 0, 0)
 		end
 	end
 end
@@ -971,6 +970,7 @@ function credits:init()
 end
 function credits:draw()
 	cls()
+	camera(0,0)
 	self.top -= 0.75
 	local y = self.top
 	local wrote_something = true
