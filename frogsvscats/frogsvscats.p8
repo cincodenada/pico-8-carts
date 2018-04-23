@@ -146,6 +146,22 @@ local lore = {
 			items = {
 				{"silver key",55,15,3,1,""},
 			},
+			cats = {{
+				{48 + flr(rnd(16)),flr(rnd(20))},
+				{48 + flr(rnd(16)),flr(rnd(20))},
+				{48 + flr(rnd(16)),flr(rnd(20))},
+				{48 + flr(rnd(16)),flr(rnd(20))},
+				{48 + flr(rnd(16)),flr(rnd(20))},
+				{48 + flr(rnd(16)),flr(rnd(20))},
+				{48 + flr(rnd(16)),flr(rnd(20))},
+				{48 + flr(rnd(16)),flr(rnd(20))},
+				{48 + flr(rnd(16)),flr(rnd(20))},
+				{48 + flr(rnd(16)),flr(rnd(20))},
+				{48 + flr(rnd(16)),flr(rnd(20))},
+				{48 + flr(rnd(16)),flr(rnd(20))},
+				{48 + flr(rnd(16)),flr(rnd(20))},
+				{48 + flr(rnd(16)),flr(rnd(20))},
+			}}
 		},
 		{
 			id = 7,
@@ -156,7 +172,7 @@ local lore = {
 				tunnel=8
 			},
 			items = {
-				{"locked chest",55,15,3,1,"it's big, oak, and seems pretty immune to brute force. there are holes in the side, but not large enough to see anything."},
+				{"locked chest",55,15,3,1,"you see a big oak chest. it seems pretty immune to brute force. there are holes in the side, but not large enough to see anything."},
 			},
 		},
 		{
@@ -237,6 +253,12 @@ function game:load_area(id, from_door)
 	for c in all(m.cats) do
 		add(self.cats, cat(c[1]*8,c[2]*8))
 	end
+	-- more cats?!
+	if(a.cats) then
+		for c in all(m.cats) do
+			add(self.cats, cat(c[1]*8,c[2]*8))
+		end
+	end
 
 	self.doors = {}
 	local dooridx = 1 -- todo: randomize
@@ -282,9 +304,9 @@ end
 function game:show_message(msg, duration)
 	local m = {
 		msg=msg,
-		frames=duration*30,
 		x=max(self.x,self:xmin() + self.cur_map.text_offset*8),
 	}
+	if(duration) m.duration=duration*30
 	m.w = 127-(m.x-self:xmin())
 	add(self.texts, m)
 end
@@ -854,21 +876,23 @@ function player:inspect()
 	local item = game:player_item()
 	if(item) then
 		game:show_message(item.message, 5)
-		if(item == "locked chest") then
-			if(self.has_item("silver key")) then
+		if(item.name == "locked chest") then
+			if(self:has_item("silver key")) then
 				game:show_message("you unlocked the chest! inside is a very sad small frog! you're a hero!")
+				spr(224,self.x+self.w,self.y-8)
 			else
-				if(self.has_item("blue key")) game:show_message("you try the blue key, but the lock doesn't budge")
-				if(self.has_item("green key")) game:show_message("you try your green key, but the chest is unyielding")
+				if(self:has_item("blue key")) game:show_message("you try the blue key, but the lock doesn't budge")
+				if(self:has_item("green key")) game:show_message("you try your green key, but the chest is unyielding")
 				game:show_message("it's pretty locked.")
 			end
-
-		game:show_message("you found a "..item.name.."!", 5)
-		add(self.items, item)
+		else
+			game:show_message("you found a "..item.name.."!", 5)
+			add(self.items, item)
+		end
 	end
 end
 function player:has_item(name)
-	for i in self.items do
+	for i in all(self.items) do
 		if(i.name == name) return true
 	end
 	return false
