@@ -521,8 +521,14 @@ function door:constructor(x,y,label,info)
 	super(door, self, x, y, sprite(2, 4, 142))
 	self.info = info
 	self.label = label
-	self.text = info[1]
-	self.link = {area=info[2],door=info[3]}
+	if(type(info) == "number") then
+		local ref = lore.areas[info]
+		self.text = ref.short
+		self.link = {area=info}
+	else
+		self.text = info[1]
+		self.link = {area=info[2],door=info[3]}
+	end
 	if(not self.link.door) self.link.door = self:get_link()
 	self.label_offset = flr(rnd(2))
 end
@@ -803,6 +809,7 @@ function player:update()
 	if(btnp(2)) self:leap(btn(3))
 
 	if(btnp(4)) self:inspect()
+	if(btnp(5)) game:load_area((game.cur_area.id + 1)%#lore.areas)
 
 	super(player).update(self)
 	self:update_jump()
