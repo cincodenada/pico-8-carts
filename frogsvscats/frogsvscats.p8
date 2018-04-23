@@ -71,6 +71,28 @@ function wrap(text, width)
 	return {text=output, lines=lines}
 end
 
+local credits = {
+	roles = {
+		"game programming",
+		"game design",
+		"high-quality programmer art",
+		"top-notch animation",
+		"map design",
+		"story writing",
+		"ux testing",
+		"alpha testers",
+		"beta testers",
+		"people who actually didn't test much, really",
+	},
+	extra_roles = {
+		{"emotional support","myka dubay","anna barton"},
+		{"inspiration and reference code","finn aka @relsqui"},
+	},
+	name = "joel bradshaw",
+	countdown = nil,
+	top=128,
+}
+
 local lore = {
 	areas = {
 		{
@@ -891,6 +913,7 @@ function player:inspect()
 			if(self:has_item("silver key")) then
 				game:show_message("you unlocked the chest! inside is a very sad small frog! you're a hero!")
 				add(game.cats, tinyfriend(self.x+self.w, self.y-8))
+				credits.countdown = 7*30
 			else
 				if(self:has_item("blue key")) game:show_message("you try the blue key, but the lock doesn't budge")
 				if(self:has_item("green key")) game:show_message("you try your green key, but the chest is unyielding")
@@ -910,6 +933,7 @@ function player:has_item(name)
 end
 
 function _init()
+	credits:init()
 	game:reset()
 end
 
@@ -919,7 +943,37 @@ end
 
 function _draw()
 	cls(12)
-	game:draw()
+	if(credits.countdown and credits.countdown <= 0) then
+		credits:draw()
+	else
+		if(credits.countdown) credits.countdown -= 1
+		game:draw()
+	end
+end
+
+function credits:init()
+	self.lines = {}
+	for a in all(self.roles) do
+		add(self.lines, a)
+		add(self.lines, self.name)
+		add(self.lines, "")
+	end
+	for a in all(self.extra_roles) do
+		add(self.lines, a[0])
+		for i=2,#a do
+			add(self.lines, a[i])
+		end
+		add(self.lines, "")
+	end
+end
+function credits:draw()
+	cls()
+	self.top -= 1
+	local y = self.top
+	for a in all(self.lines) do
+		if(y > 128) return
+		print(a, 64-#a*4/2, y, 7)
+	end
 end
 
 __gfx__
