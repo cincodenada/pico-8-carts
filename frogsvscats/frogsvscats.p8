@@ -118,19 +118,20 @@ local lore = {
 			links = {
 				north=3,
 				west=1,
+				east=6,
 			},
 			items = {
-				{"green key",0,0,0,0,""},
+				{"green key",55,15,3,1,""},
 			},
 		},
 		{
 			id = 5,
 			mapid = 3,
 			short = "a cave. kinda creepy.",
-			intro = "you enter the mouth of the cave. it gets dark very quickly. you hear dripping water further back.",
+			intro = "you are in a rough cave. it gets dark very quickly. you hear dripping water towards the back.",
 			links = {
 				north=1,
-				south=9,
+				grate=8,
 			},
 			items = {},
 		},
@@ -143,7 +144,7 @@ local lore = {
 				west=4,
 			},
 			items = {
-				{"silver key",0,0,0,0,""},
+				{"silver key",55,15,3,1,""},
 			},
 		},
 		{
@@ -152,10 +153,10 @@ local lore = {
 			short = "a dark, narrow tunnel",
 			intro = "you seem to have emerged in some sort of dungeon! judging by thei feline-themed decor, you guess you are underneath the catsle that you approached earlier",
 			links = {
-				tunnel=9
+				tunnel=8
 			},
 			items = {
-				{"locked chest",0,0,0,0,""},
+				{"locked chest",55,15,3,1,""},
 			},
 		},
 		{
@@ -164,11 +165,11 @@ local lore = {
 			short = "an ample tunnel",
 			intro = "you're in a dark subterranean room lit dimly by torches, somehow still alight.",
 			links = {
-				tunnel = 8,
-				culvert = 5,
+				tunnel = 7,
+				grate = 5,
 			},
 			items = {
-				{"an old scroll",0,0,0,0,""},
+				{"an old scroll",55,15,3,1,""},
 			},
 		},
 	},
@@ -193,7 +194,8 @@ local lore = {
 			x=48,y=0,w=16,
 			px=52,py=15,
 			cats={{61,15},{55,12}},
-			doors={{49,15},{55,12},{60,15}}
+			doors={{49,15},{55,12},{60,15}},
+			text_offset = 0,
 		},
 	},
 }
@@ -292,9 +294,9 @@ function game:inspect_door(d)
 end
 function game:enter_door(d)
 	if(d.link.area) then
-		cls()
-		camera(0,0)
-		print(d.link.area)
+		local ld = d.link.door
+		-- if not n/s/e/w, they should be matching pairs
+		if(not ld) ld=d.label
 		self:load_area(d.link.area, d.link.door)
 	end
 end
@@ -525,6 +527,9 @@ function door:constructor(x,y,label,info)
 		local ref = lore.areas[info]
 		self.text = ref.short
 		self.link = {area=info}
+	elseif(type(info) == "string") then
+		self.text = info
+		self.link = {}
 	else
 		self.text = info[1]
 		self.link = {area=info[2],door=info[3]}
@@ -809,7 +814,11 @@ function player:update()
 	if(btnp(2)) self:leap(btn(3))
 
 	if(btnp(4)) self:inspect()
-	if(btnp(5)) game:load_area((game.cur_area.id + 1)%#lore.areas)
+	if(btnp(5)) then
+		next_area = game.cur_area.id+1
+		if(next_area > #lore.areas) next_area = 1
+		game:load_area(next_area)
+	end
 
 	super(player).update(self)
 	self:update_jump()
