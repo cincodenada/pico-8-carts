@@ -339,6 +339,14 @@ function game:inspect_door(d)
 	}
 end
 function game:enter_door(d)
+	if(d.name == "grate" and not d.unlocked) then
+		if(player:has_item("silver key")) then
+			game:show_message("You try the silver key in the grate. It opens with a loud creak. There's an old musty culvert behind it that's plenty wide for a frog to fit through.")
+		else
+			game:show_message("The grate doesn't budge. You sweep away some debris and spy a keyhole that seems promising.")
+			return
+		end
+	end
 	if(d.link.area) then
 		local ld = d.link.door
 		-- if not n/s/e/w, they should be matching pairs
@@ -912,7 +920,7 @@ function player:inspect()
 	if(item) then
 		game:show_message(item.message, 5)
 		if(item.name == "locked chest") then
-			if(self:has_item("silver key")) then
+			if(self:has_item("blue key")) then
 				game:show_message("you unlocked the chest! inside is a very sad small frog! you're a hero!")
 				add(game.cats, tinyfriend(self.x+self.w, self.y-8))
 				credits.countdown = 7*30
