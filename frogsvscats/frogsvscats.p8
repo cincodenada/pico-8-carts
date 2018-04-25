@@ -26,22 +26,22 @@ end
 
 function wrap(text, width)
 	local charwidth = flr(width/4)
+	local actual_width = 0
 	text = text.." "
-	local output, curline, word = "","",""
-	local pos,lines = 1,1
+	local curline, word = "","",""
+	local lines = {}
+	local pos = 1
 	while(pos <= #text) do
 		local curlet = sub(text,pos,pos)
 		if(curlet == " ") then
 			if(#curline + #word > charwidth) then
-				output = output..curline.."\n"
+				add(lines, curline)
 				curline=""
-				lines += 1
 				-- back up so we re-process the space next line
 				pos -= 1
 			elseif(#curline + #word == charwidth) then
-				output = output..curline..word.."\n"
+				add(lines, curline..word)
 				curline=""
-				lines += 1
 				word = ""
 			else
 				curline = curline..word.." "
@@ -49,28 +49,34 @@ function wrap(text, width)
 			end
 		elseif(curlet == "\n") then
 			if(#curline + #word > charwidth) then
-				output = output..curline.."\n"
-				lines+=1
-				output = output..word.."\n"
+				add(lines, curline)
+				add(lines, word)
 			else
-				output = output..curline..word.."\n"
+				add(lines, curline..word)
 			end
 			curline=""
 			word=""
-			lines+=1
 		else
 			word = word..curlet
 			-- if we have a word that's too long, just break it
 			if(curline == "" and #word == charwidth) then
-				output = output..word.."\n"
+				add(lines, word)
 				word=""
-				lines += 1
 			end
 		end
 		pos += 1
 	end
-	if(curline!="") output = output..curline.."\n"
-	return {text=output, lines=lines}
+	if(curline!="") add(lines, curline)
+	-- trim terminal spaces
+	local final_lines = {}
+	for l in all(lines) do
+		if(sub(l,#l,#l) == " " or sub(l,#l,#l) =="\n") then
+			add(final_lines, sub(l,1,#l-1))
+		else
+			add(final_lines, l)
+		end
+	end
+	return final_lines
 end
 
 local credits = {
@@ -335,13 +341,14 @@ function game:add_door(label,di,idx)
 		local dc = self.cur_map.doors[idx]
 		add(self.doors, door(dc[1]*8,dc[2]*8,label,di))
 end
-function game:show_message(msg, duration)
+function game:show_message(msg, duration, bg)
 	local m = {
 		msg=msg,
 		x=max(self.x,self:xmin() + self.cur_map.text_offset*8),
 	}
 	if(duration) m.duration=duration*30
-	m.w = 127-(m.x-self:xmin())
+	m.w = 127-(m.x-self.x)
+	m.bg = bg
 	add(self.texts, m)
 end
 function game:inspect_door(d)
@@ -397,9 +404,12 @@ function game:draw()
 			local c = t.col
 			if(not c) c=7
 
-			local w = wrap(t.msg,tw)
-			print(w.text,t.x+1,cury,c)
-			cury += w.lines*6
+			local lines = wrap(t.msg,tw)
+			for l in all(lines) do
+				rectfill(t.x,cury-1,t.x+#l*4,cury+5,bg)
+				print(l,t.x+1,cury,c)
+				cury += 6
+			end
 
 			if(t.duration) t.duration -= 1
 		end
@@ -920,8 +930,10 @@ end
 function player:inspect()
 	-- could probably be more efficient
 	-- and use sprite flags here but ehhh
+	local found_something = false
 	local door = game:player_door()
 	if(door) then
+		found_something = true
 		if(self.last_door == door) then
 			-- go in
 			game:enter_door(door)
@@ -932,6 +944,7 @@ function player:inspect()
 	end
 	local item = game:player_item()
 	if(item) then
+		found_something = true
 		game:show_message(item.message, 5)
 		if(item.name == "locked chest") then
 			if(self:has_item("blue key")) then
@@ -947,6 +960,9 @@ function player:inspect()
 			game:show_message("you found a "..item.name.."!", 5)
 			add(self.items, item)
 		end
+	end
+	if(not found_something) then
+		game:show_message("There doesn't seem to be anything here.", 3, true)
 	end
 end
 function player:has_item(name)
