@@ -113,7 +113,7 @@ local lore = {
 				north = 2,
 				south = 5,
 				east = 4,
-				up = "the sun. it hurts your eyes.",
+				up = "the sun. it hurts your eyes. maybe you should try another door.",
 			},
 		},
 		{
@@ -352,10 +352,23 @@ function game:show_message(msg, duration, bg)
 	add(self.texts, m)
 end
 function game:inspect_door(d)
+	-- todo: properly conditionalize these
+	local where
+	if(d.label == "north" or
+	   d.label == "south" or
+	   d.label == "east" or
+	   d.label == "west") then
+		where = d.label
+	else
+		where = "at the "..d.label
+	end
 	self.texts = {
-		{msg="you look "..d.label..". you see "..d.text, col=7, x=self.x},
-		{msg="press o/x again to enter", col=7, x=self.x+5}
+		{msg="you look "..where..". you see "..d.text, col=7, x=self.x},
 	}
+	if(d.label != "up") then
+		-- todo: properly conditionalize this
+		add(self.texts,{msg="press o/x again to enter", col=7, x=self.x+5})
+	end
 end
 function game:enter_door(d)
 	if(d.name == "grate" and not d.unlocked) then
