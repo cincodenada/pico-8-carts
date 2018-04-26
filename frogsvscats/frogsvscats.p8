@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
--- frogs vs. cats v1.0.2
+-- frogs vs. cats v1.0.3
 -- by joel bradshaw
 -- vim: sw=2 ts=2 sts=2 noet foldmethod=marker foldmarker=-->8,---
 function class(superclass)
@@ -152,7 +152,7 @@ local lore = {
 				east=6,
 			},
 			items = {
-				{"green key",55,15,3,1,""},
+				{"green key",55,15,3,1,"you peer into the weeds and notice something shiny. it's a key!"},
 			},
 		},
 		{
@@ -177,7 +177,7 @@ local lore = {
 				west=4,
 			},
 			items = {
-				{"silver key",55,15,3,1,""},
+				{"silver key",65,15,2,1,"you find a small crack in the wall. further inspection reveals a glint. you reach in and pull out a key!"},
 			},
 		},
 		{
@@ -185,7 +185,7 @@ local lore = {
 			mapid = 3,
 			bg = 0,
 			short = "a dark, narrow tunnel",
-			intro = "you seem to have emerged in some sort of dungeon! judging by thei feline-themed decor, you guess you are underneath the catsle that you approached earlier",
+			intro = "you seem to have emerged in some sort of dungeon! judging by the feline-themed decor, you guess you are underneath the catsle that you approached earlier",
 			links = {
 				tunnel=8
 			},
@@ -357,7 +357,8 @@ function game:inspect_door(d)
 	if(d.label == "north" or
 	   d.label == "south" or
 	   d.label == "east" or
-	   d.label == "west") then
+	   d.label == "west" or
+	   d.label == "up") then
 		where = d.label
 	else
 		where = "at the "..d.label
@@ -371,11 +372,12 @@ function game:inspect_door(d)
 	end
 end
 function game:enter_door(d)
-	if(d.name == "grate" and not d.unlocked) then
-		if(player:has_item("silver key")) then
-			game:show_message("You try the silver key in the grate. It opens with a loud creak. There's an old musty culvert behind it that's plenty wide for a frog to fit through.")
+	if(d.label == "grate" and not d.unlocked) then
+		if(self.player:has_item("silver key")) then
+			game:show_message("you try the silver key in the grate. it opens with a loud creak. there's an old musty culvert behind it that's plenty wide for a frog to fit through.")
+			d.unlocked = true
 		else
-			game:show_message("The grate doesn't budge. You sweep away some debris and spy a keyhole that seems promising.")
+			game:show_message("the grate doesn't budge. you sweep away some debris and spy a keyhole that seems promising.")
 			return
 		end
 	end
@@ -383,7 +385,7 @@ function game:enter_door(d)
 		local ld = d.link.door
 		-- if not n/s/e/w, they should be matching pairs
 		if(not ld) ld=d.label
-		self:load_area(d.link.area, d.link.door)
+		self:load_area(d.link.area, ld)
 	end
 end
 function game:update()
@@ -796,7 +798,7 @@ function entity:check_collisions()
 		end
 	end
 
-	if(self.collided) sfx(1)
+	-- if(self.collided) sfx(1)
 end
 
 tinyfriend = class(entity)
@@ -975,7 +977,7 @@ function player:inspect()
 		end
 	end
 	if(not found_something) then
-		game:show_message("There doesn't seem to be anything here.", 3, true)
+		game:show_message("there doesn't seem to be anything here.", 3, true)
 	end
 end
 function player:has_item(name)
