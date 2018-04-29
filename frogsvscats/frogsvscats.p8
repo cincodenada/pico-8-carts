@@ -573,10 +573,10 @@ function exists:center()
 end
 -- returns boundaries, idx are buttons (lrud)
 function exists:b(idx)
-	if(idx == 0) return flr(self.x)
-	if(idx == 1) return flr(self.x+self.w-1)
-	if(idx == 2) return flr(self.y-self.h)
-	if(idx == 3) return flr(self.y-1)
+	if(idx == 0 or idx=='w') return flr(self.x)
+	if(idx == 1 or idx=='e') return flr(self.x+self.w-1)
+	if(idx == 2 or idx=='n') return flr(self.y-self.h)
+	if(idx == 3 or idx=='s') return flr(self.y-1)
 end
 function exists:contains_x(p) return (p >= self:b(0) and p <= self:b(1)) end
 function exists:contains_y(p) return (p >= self:b(2) and p <= self:b(3)) end
@@ -888,7 +888,11 @@ function frog:update_jump()
 			-- if we're gonna run into something, make it a leap
 			local jump_x = 16
 			local jump_y = 8
-			--if(get_colliding(self.x + jump_x, self.y, self.w, self.h))
+			if(game:get_colliding(self.x + jump_x*self.sprite.facing, self:b('n'), self.w, self.h)) then
+				if(not game:get_colliding(self.x + jump_x*self.sprite.facing, self:b('n') - jump_y, self.h)) then
+					self.leaping = true
+				end
+			end
 			if(self.leaping) then
 				if(self.leaping_up) then
 					self:set_frame_slow(5,10,4)
@@ -934,10 +938,9 @@ end
 function player:update()
 	if(btnp(0)) self:jump(-1)
 	if(btnp(1)) self:jump(1)
-	if(btnp(2)) self:leap(btn(3))
+	if(btnp(2)) self:leap(true)
 
 	if(btnp(4)) self:inspect()
-	if(btnp(5)) self:leap(true)
 
 	if(false) then
 		next_area = game.cur_area.id+1
