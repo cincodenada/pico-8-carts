@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
--- frogs vs. cats v1.0.3
+-- frogs vs. cats v1.1.1
 -- by joel bradshaw
 -- vim: sw=2 ts=2 sts=2 noet foldmethod=marker foldmarker=-->8,---
 function class(superclass)
@@ -454,22 +454,35 @@ function game:scoot(dist)
 	end
 	self.to_scoot = dist
 end
-function game:is_colliding(x,y,x2,y2)
-	if(x2 == nil) x2=x
-	if(y2 == nil) y2=y
-	local ret = false
+function game:get_colliding(x,y,w,h)
+	if(not y) then
+		-- convert from bb
+		local bb = x
+		x,y,x2,y2 = bb.w,bb.n,bb.e,bb.s
+	else
+		if(not w) w=1
+		if(not h) h=1
+		x2 = x+w-1
+		y2 = y+h-1
+	end
+	local colliding = {}
 	for cx=flr(x/8),flr(x2/8) do
 		for cy=flr(y/8),flr(y2/8) do
 			local cs = mget(cx, cy)
 			if(fget(cs, 0)) then
 				add(game.debug_blocks,{x=cx,y=cy,s=1})
-				ret={x=cx,y=cy}
+				add(colliding, {x=cx,y=cy})
 			else
 				add(game.debug_blocks,{x=cx,y=cy,s=0})
 			end
 		end
 	end
-	return ret
+	
+	if #colliding == 0 then
+		return nil
+	else
+		return colliding
+	end
 end
 function game:player_door()
 	for d in all(self.doors) do
@@ -761,13 +774,14 @@ function entity:replace_move(dx,dy,vx,vy)
 	self.cur_move = { dx=abs(dx), dy=abs(dy), vx=vx*self.sprite.facing, vy=vy, x0=self.x, y0=self.y }
 end
 function entity:is_floating()
-	return not game:is_colliding(self.x,self.y,self.x+self.w-1)
+	return not game:get_colliding(self.x,self.y,self.w)
 end
 function entity:check_collisions()
 	-- resolve gravity first
 	local bb = self:bb()
-	local cblock = game:is_colliding(bb.w,bb.n,bb.e,bb.s)
+	local cblock = game:get_colliding(bb)
 	if(cblock) then
+		cblock = cblock[1]
 		-- if we're not moving (aka falling)
 		-- or, we're moving down otherwise
 		if(not self.cur_move or (self.cur_move.vx == 0 and self.cur_move.vy >= 0)) then
@@ -780,8 +794,9 @@ function entity:check_collisions()
 
 	-- then check to see if we're still colliding
 	bb = self:bb()
-	cblock = game:is_colliding(bb.w,bb.n,bb.e,bb.s)
+	cblock = game:get_colliding(bb)
 	if(cblock) then
+		cblock = cblock[1]
 		self.collided = true
 		--printh("cb:"..cblock.y.."/"..(cblock.y*8).." sy:"..self.y.." bb.s:"..bb.s,"log")
 		-- we only bump up for gravity
@@ -828,9 +843,9 @@ function cat:update()
 	-- turn around at edges of ground
 	if(self.cur_move) then
 		if(self.cur_move.vx < 0) then
-			if(not game:is_colliding(self.x-1,self.y)) self.cur_move.vx *= -1
+			if(not game:get_colliding(self.x-1,self.y)) self.cur_move.vx *= -1
 		elseif(self.cur_move.vx > 0) then
-			if(not game:is_colliding(self.x+self.w,self.y)) self.cur_move.vx *= -1
+			if(not game:get_colliding(self.x+self.w,self.y)) self.cur_move.vx *= -1
 		end
 	end
 
@@ -870,6 +885,10 @@ function frog:update_jump()
 		-- manage start/end of jump
 		if(self.sprite:entered(5)) then
 			-- start movement
+			-- if we're gonna run into something, make it a leap
+			local jump_x = 16
+			local jump_y = 8
+			--if(get_colliding(self.x + jump_x, self.y, self.w, self.h))
 			if(self.leaping) then
 				if(self.leaping_up) then
 					self:set_frame_slow(5,10,4)
