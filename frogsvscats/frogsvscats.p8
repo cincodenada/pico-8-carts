@@ -158,7 +158,7 @@ local lore = {
 		{
 			id = 5,
 			bg = 0,
-			mapid = 3,
+			mapid = 5,
 			short = "a cave. kinda creepy.",
 			intro = "you are in a rough cave. it gets dark very quickly. you hear dripping water towards the back.",
 			links = {
@@ -182,7 +182,7 @@ local lore = {
 		},
 		{
 			id = 7,
-			mapid = 3,
+			mapid = 5,
 			bg = 0,
 			short = "a dark, narrow tunnel",
 			intro = "you seem to have emerged in some sort of dungeon! judging by the feline-themed decor, you guess you are underneath the catsle that you approached earlier",
@@ -195,7 +195,7 @@ local lore = {
 		},
 		{
 			id = 8,
-			mapid = 3,
+			mapid = 5,
 			bg = 0,
 			short = "an ample tunnel",
 			intro = "you're in a dark subterranean room lit dimly by torches, somehow still alight.",
