@@ -358,6 +358,11 @@ function game:add_door(label,di,idx)
 		add(self.doors, door(dc[1]*8,dc[2]*8,label,di))
 end
 function game:show_message(msg, duration, bg)
+	-- Don't add duplicate texts
+	for t in all(self.texts) do
+		if(t.msg == msg) return
+	end
+
 	local m = {
 		msg=msg,
 		x=max(self.x,self:xmin() + self.cur_map.text_offset*8),
