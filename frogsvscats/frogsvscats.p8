@@ -278,12 +278,9 @@ local game = {
 }
 function game:reset()
 	self.player = player(0,120)
-	self:load_area(1)
+	self:load_area(1, nil, {x=0, y=120})
 	-- override area text and player position for first play
   self.texts ={{msg="you wake up in a bright field. you attempt to walk forward, but find that you feel a little...hoppy.\nahead, you see\nmovement in the\ndistance.",x=0}}
-	self.player.x=0
-	self.player.y=120
-	self:insta_scoot()
 end
 function game:save_camera() add(self.cameras, peek4(0x5f28)) camera() end
 function game:load_camera() poke4(0x5f28, self.cameras[#self.cameras]) self.cameras[#self.cameras] = nil end
@@ -291,7 +288,7 @@ function game:xmin() return self.cur_map.x*8 end
 function game:xmax() return self.cur_map.x*8+self.cur_map.w*8-1 end
 -- this should probably be its own object
 -- but we're in crunch time
-function game:load_area(id, from_door)
+function game:load_area(id, from_door, player_pos)
 	local a = lore.areas[id]
 	local m = lore.maps[a.mapid]
 	self.cur_area, self.cur_map = a, m
@@ -319,25 +316,31 @@ function game:load_area(id, from_door)
 
 	self:load_items()
 
+	if(player_pos) then
+		game.player.x = player_pos.x
+		game.player.y = player_pos.y
+	else
+		if(player_door) then
+			game.player.x = player_door.x
+			game.player.y = player_door.y
+		else
+			game.player.x = self.x+m.px*8
+			game.player.y = m.py*8
+		end
+	end
+	
 	self.x = m.x*8
+	self.to_scoot = 0
+	-- Insta-scoot at beginning of the level
+	self:insta_scoot()
+
+
 	local text = {msg=a.intro, col=7, x=self.x}
 	if(m.text_offset) then
 		text.x += m.text_offset*8
 		text.w = 127-m.text_offset*8
 	end
 	self.texts = {text}
-	self.to_scoot = 0
-
-	if(player_door) then
-		game.player.x = player_door.x
-		game.player.y = player_door.y
-	else
-		game.player.x = self.x+m.px*8
-		game.player.y = m.py*8
-	end
-	
-	-- Insta-scoot at beginning of the level
-	self:insta_scoot()
 end
 function game:insta_scoot()
 	local scoot = game.player:needs_scoot()
