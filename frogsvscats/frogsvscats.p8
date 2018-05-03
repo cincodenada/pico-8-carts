@@ -283,6 +283,7 @@ function game:reset()
   self.texts ={{msg="you wake up in a bright field. you attempt to walk forward, but find that you feel a little...hoppy.\nahead, you see\nmovement in the\ndistance.",x=0}}
 	self.player.x=0
 	self.player.y=120
+	self:insta_scoot()
 end
 function game:save_camera() add(self.cameras, peek4(0x5f28)) camera() end
 function game:load_camera() poke4(0x5f28, self.cameras[#self.cameras]) self.cameras[#self.cameras] = nil end
@@ -333,6 +334,19 @@ function game:load_area(id, from_door)
 	else
 		game.player.x = self.x+m.px*8
 		game.player.y = m.py*8
+	end
+	
+	-- Insta-scoot at beginning of the level
+	self:insta_scoot()
+end
+function game:insta_scoot()
+	local scoot = game.player:needs_scoot()
+	if(scoot) then
+		if(scoot > 0) then
+			self.x = min(8*(self.cur_map.x+self.cur_map.w), game.player.x - 16*8 + game.player.w*1.5)
+		else
+			self.x = max(self.cur_map.x*8, game.player.x - game.player.w*0.5)
+		end
 	end
 end
 function game:find_doors()
@@ -471,7 +485,7 @@ function game:scoot(dist)
 	if(self.x + dist < self:xmin()) then
 		dist = self:xmin() - self.x
 	elseif(self.x + dist > self:xmax()) then
-		dist = self:xmax()-self.x
+		dist = self:xmax() - self.x
 	end
 	self.to_scoot = dist
 end
@@ -979,11 +993,16 @@ function player:update()
 		return
 	end
 
+	local scoot = self:needs_scoot()
+	if(scoot) game:scoot(self.w*scoot)
+end
+function player:needs_scoot()
 	if(self.x > game.x + 128-self.w) then
-		game:scoot(self.w)
+		return 1
 	elseif(self.x < game.x+self.w) then
-		game:scoot(-self.w)
+		return -1
 	end
+	return false
 end
 function player:inspect()
 	-- could probably be more efficient
