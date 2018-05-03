@@ -384,7 +384,7 @@ function game:inspect_door(d)
 	}
 	if(d.label != "up") then
 		-- todo: properly conditionalize this
-		add(self.texts,{msg="press o/x again to enter", col=7, x=self.x+5})
+		add(self.texts,{msg="press ❎/z again to enter", col=7, x=self.x+5})
 	end
 end
 function game:enter_door(d)
