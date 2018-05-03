@@ -214,14 +214,12 @@ local lore = {
 			x=0,y=0,w=32,
 			px=22,py=10,
 			cats = {{25,11}},
-			doors = {{22,12},{18,9},{11,7},{5,9},{28,16}},
 			text_offset = 0,
 		},
 		{
 			x=32,y=0,w=16,
 			px=6,py=13,
 			cats = {{39,13}},
-			doors = {{33,4},{33,10},{45,13}},
 			text_offset = 4,
 		},
 		-- boring base map
@@ -229,7 +227,6 @@ local lore = {
 			x=48,y=0,w=16,
 			px=52,py=15,
 			cats={{61,15},{55,12}},
-			doors={{49,15},{55,12},{60,15}},
 			text_offset = 0,
 		},
 		-- catsle
@@ -305,7 +302,10 @@ function game:load_area(id, from_door, player_pos)
 	end
 
 	self.doors = {}
-	self.cur_map.doors = game:find_doors()
+	if(not self.cur_map.doors) self.cur_map.doors = {}
+	for d in all(game:find_doors()) do
+		add(self.cur_map.doors, d)
+	end
 	local dooridx = 1 -- todo: randomize
 	local player_door = nil
 	for label,info in pairs(a.links) do
