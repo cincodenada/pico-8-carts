@@ -190,7 +190,7 @@ local lore = {
 				tunnel=8
 			},
 			items = {
-				{"locked chest",55,15,3,1,"you see a big oak chest. it seems pretty immune to brute force. there are holes in the side, but not large enough to see anything.",{96,97}},
+				{"locked chest",93,15,2,1,"you see a big oak chest. it seems pretty immune to brute force. there are holes in the side, but not large enough to see anything.",96},
 			},
 		},
 		{
@@ -204,7 +204,7 @@ local lore = {
 				grate = 5,
 			},
 			items = {
-				{"an old scroll",55,15,3,1,"it seems to be blank. could the developer have run out of time to do anything with it?"},
+				{"an old scroll",87,15,3,1,"it seems to be blank. could the developer have run out of time to do anything with it?"},
 			},
 		},
 	},
@@ -369,7 +369,7 @@ function game:load_items()
 		i.message = info[6]
 		add(self.items, i)
 		if(info[7]) then
-			self.sprite = sprite(#info[7], 1, info[7][1])
+			self.sprite = sprite(i.w/8, i.h/8, {info[7]})
 		end
 	end
 end
@@ -653,6 +653,7 @@ function exists:draw()
 		local bb=self:bb()
 		rect(bb.w,bb.n,bb.e,bb.s,8)
 	end
+	if(self.sprite) self.sprite:draw(self.x, self.y)
 end
 
 visible = class(exists)
