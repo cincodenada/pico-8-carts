@@ -436,16 +436,20 @@ function game:inspect_door(d)
 end
 function game:enter_door(d)
 	if(d.label == "grate" and not d.unlocked) then
+		if(not d.swept) then
+			game:show_message("the grate doesn't budge. you sweep away some debris and spy a keyhole that seems promising.")
+			d.swept = true
+		end
 		if(self.player:has_item("silver key")) then
 			game:show_message("you try the silver key in the grate. it opens with a loud creak. there's an old musty culvert behind it that's plenty wide for a frog to fit through.")
 			self:play_sound("creak")
 			d.unlocked = true
-			return
 		else
+			if(self.player:has_item("blue key")) game:show_message("you try the blue key, but the lock doesn't budge",5)
+			if(self.player:has_item("green key")) game:show_message("you try your green key, but it doesn't even fit",5)
 			self:play_sound("nope")
-			game:show_message("the grate doesn't budge. you sweep away some debris and spy a keyhole that seems promising.")
-			return
 		end
+		return
 	end
 	if(d.link.area) then
 		local ld = d.link.door
@@ -1077,12 +1081,12 @@ function player:inspect()
 		game:show_message(item.message, 10)
 		if(item.name == "locked chest") then
 			if(self:has_item("blue key")) then
-				game:show_message("you unlocked the chest! inside is a very sad small frog! you're a hero!")
+				if(self:has_item("green key")) game:show_message("you try your green key, but the chest is unyielding",5)
+				game:show_message("you try the blue key and it unlocks the chest! inside is a very sad small frog! you're a hero!")
 				add(game.cats, tinyfriend(self.x+self.w, self.y-8))
 				game:play_sound("win")
 				credits.countdown = 7*30
 			else
-				if(self:has_item("blue key")) game:show_message("you try the blue key, but the lock doesn't budge",5)
 				if(self:has_item("green key")) game:show_message("you try your green key, but the chest is unyielding",5)
 				game:play_sound("nope")
 				game:show_message("it's pretty locked.",5)
