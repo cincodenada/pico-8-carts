@@ -1074,7 +1074,7 @@ function player:inspect()
 	local item = game:player_item()
 	if(item) then
 		found_something = true
-		game:show_message(item.message, 5)
+		game:show_message(item.message, 10)
 		if(item.name == "locked chest") then
 			if(self:has_item("blue key")) then
 				game:show_message("you unlocked the chest! inside is a very sad small frog! you're a hero!")
@@ -1082,10 +1082,10 @@ function player:inspect()
 				game:play_sound("win")
 				credits.countdown = 7*30
 			else
-				if(self:has_item("blue key")) game:show_message("you try the blue key, but the lock doesn't budge")
-				if(self:has_item("green key")) game:show_message("you try your green key, but the chest is unyielding")
+				if(self:has_item("blue key")) game:show_message("you try the blue key, but the lock doesn't budge",5)
+				if(self:has_item("green key")) game:show_message("you try your green key, but the chest is unyielding",5)
 				game:play_sound("nope")
-				game:show_message("it's pretty locked.")
+				game:show_message("it's pretty locked.",5)
 			end
 		else
 			game:show_message("you found a "..item.name.."!", 5)
