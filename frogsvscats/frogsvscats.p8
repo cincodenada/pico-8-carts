@@ -435,15 +435,15 @@ function game:inspect_door(d)
 	end
 end
 function game:enter_door(d)
-	if(d.label == "grate" and not d.unlocked) then
+	if(d.label == "grate" and not d.unlocked and self.cur_area.id==5) then
 		if(not d.swept) then
 			game:show_message("the grate doesn't budge. you sweep away some debris and spy a keyhole that seems promising.")
-			d.swept = true
+			d:sweep()
 		end
 		if(self.player:has_item("silver key")) then
 			game:show_message("you try the silver key in the grate. it opens with a loud creak. there's an old musty culvert behind it that's plenty wide for a frog to fit through.")
 			self:play_sound("creak")
-			d.unlocked = true
+			d:unlock()
 		else
 			if(self.player:has_item("blue key")) game:show_message("you try the blue key, but the lock doesn't budge",5)
 			if(self.player:has_item("green key")) game:show_message("you try your green key, but it doesn't even fit",5)
@@ -714,6 +714,8 @@ function door:constructor(x,y,label,info)
 	super(door, self, x, y, sprite(2, 4, 142))
 	self.info = info
 	self.label = label
+	self.unlocked = false
+	self.swept = false
 	if(type(info) == "number") then
 		local ref = lore.areas[info]
 		self.text = ref.short
@@ -727,6 +729,12 @@ function door:constructor(x,y,label,info)
 	end
 	if(not self.link.door) self.link.door = self:get_link()
 	self.label_offset = flr(rnd(2))
+end
+function door:sweep()
+	self.swept = true
+end
+function door:unlock()
+	self.unlocked = true
 end
 function door:get_link()
 	if(self.label == "north") return "south"
