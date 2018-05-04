@@ -89,12 +89,12 @@ local credits = {
 		"story writing",
 		"ux testing",
 		"alpha testers",
-		"beta testers",
 		"people who actually\ndidn't test much, really",
 	},
 	extra_roles = {
 		{"emotional support","myka dubay","anna barton"},
 		{"inspiration and reference code","finn aka @relsqui"},
+		{"beta testers","friendly ludum dare participants"},
 	},
 	name = "joel bradshaw",
 	countdown = nil,
