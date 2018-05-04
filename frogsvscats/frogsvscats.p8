@@ -479,9 +479,13 @@ function game:draw()
 	cls(bg)
 	map(0,0,0,0,128,32,1+4)
 	foreach(self.doors, function(t) t:draw() end)
+	self:draw_texts(bg)
 	self.player:draw()
 	for c in all(self.cats) do c:draw() end
 	for i in all(self.items) do i:draw() end
+	if(self.debug!="") game:draw_debug()
+end
+function game:draw_texts(bg)
 	cury = 1
 	local did_timeout = false
 	local to_remove = {}
@@ -510,7 +514,6 @@ function game:draw()
 	for idx in all(to_remove) do
 		self.texts[idx] = nil
 	end
-	if(self.debug!="") game:draw_debug()
 end
 function game:dbg(txt)
 	self.debug = self.debug..txt.."\n"
@@ -1085,7 +1088,7 @@ function player:inspect()
 				game:show_message("you try the blue key and it unlocks the chest! inside is a very sad small frog! you're a hero!")
 				add(game.cats, tinyfriend(self.x+self.w, self.y-8))
 				game:play_sound("win")
-				credits.countdown = 7*30
+				credits.countdown = 10*30
 			else
 				if(self:has_item("green key")) game:show_message("you try your green key, but the chest is unyielding",5)
 				game:play_sound("nope")
