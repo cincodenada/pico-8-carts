@@ -479,7 +479,7 @@ function game:draw()
 	for c in all(self.cats) do c:draw() end
 	for i in all(self.items) do i:draw() end
 	cury = 1
-	local last_timeout = nil
+	local did_timeout = false
 	local to_remove = {}
 	for idx,t in pairs(self.texts) do
 		if(not t.duration or t.duration > 0) then
@@ -495,7 +495,10 @@ function game:draw()
 				cury += 6
 			end
 
-			if(t.duration) last_timeout = t
+			if(t.duration and not did_timeout) then
+				t.duration -= 1
+				did_timeout = true
+			end
 		else
 			if(t.duration) add(to_remove, idx)
 		end
@@ -503,7 +506,6 @@ function game:draw()
 	for idx in all(to_remove) do
 		self.texts[idx] = nil
 	end
-	if(last_timeout) last_timeout.duration -= 1
 	if(self.debug!="") game:draw_debug()
 end
 function game:dbg(txt)
