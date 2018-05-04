@@ -557,7 +557,7 @@ function game:player_door()
 end
 function game:player_item()
 	for i in all(self.items) do
-		if(i:intersects(self.player)) return i
+		if(i:intersects(self.player) and not self.player:has_item(i.name)) return i
 	end
 end
 
