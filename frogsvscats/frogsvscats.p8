@@ -218,7 +218,7 @@ local lore = {
 		},
 		{
 			x=32,y=0,w=16,
-			px=6,py=13,
+			px=33,py=10,
 			cats = {{39,13}},
 			text_offset = 4,
 		},
@@ -346,7 +346,7 @@ function game:load_area(id, from_door, player_pos)
 			game.player.x = player_door.x
 			game.player.y = player_door.y
 		else
-			game.player.x = self.x+m.px*8
+			game.player.x = m.px*8
 			game.player.y = m.py*8
 		end
 	end
