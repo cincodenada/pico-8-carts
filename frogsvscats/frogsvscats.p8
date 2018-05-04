@@ -479,6 +479,7 @@ function game:draw()
 	for c in all(self.cats) do c:draw() end
 	for i in all(self.items) do i:draw() end
 	cury = 1
+	local last_timeout = nil
 	for t in all(self.texts) do
 		if(not t.duration or t.duration > 0) then
 			local tw = t.w
@@ -493,9 +494,10 @@ function game:draw()
 				cury += 6
 			end
 
-			if(t.duration) t.duration -= 1
+			if(t.duration) last_timeout = t
 		end
 	end
+	if(last_timeout) last_timeout.duration -= 1
 	if(self.debug!="") game:draw_debug()
 end
 function game:dbg(txt)
