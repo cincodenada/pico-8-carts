@@ -633,7 +633,7 @@ function sprite:set_frames(frames)
 		local base_frame = frames[1]
 		local next_row = 16
 		self.frames = {}
-		for i=0,frames.count,self.w do
+		for i=0,frames.count*self.w,self.w do
 			if(i >= next_row) then
 				next_row += 16
 				base_frame += 16*(self.h-1)
