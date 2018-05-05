@@ -4,7 +4,6 @@ __lua__
 -- frogs vs. cats v1.1.1
 -- by joel bradshaw
 -- vim: sw=2 ts=2 sts=2 noet foldmethod=marker foldmarker=-->8,---
-title_color = 7
 function class(superclass)
 	local cls = {}
 	cls.next_id, cls.__index = 0, cls
@@ -211,16 +210,16 @@ local lore = {
 		{
 			id = 9,
 			mapid = 6,
-			intro = "frogs vs. cats\
-arrow keys to hop around\
-up to jump vertically onto platforms above you\
-❎ (z) will inspect wherever you are standing\
+			intro = "\n\
+⬅️➡️: hop around\
+ ⬆️ : jump up onto platforms\
+❎/z: inspect where you are standing\
 use doors to enter commands",
 			links = {
 				start = 1,
 			},
 			door_msg = {
-				start = "",
+				start = "\n\n",
 			}
 		}
 	},
@@ -510,17 +509,19 @@ function game:draw()
 	cls(bg)
 	map(0,0,0,0,128,32,1+4)
 	foreach(self.doors, function(t) t:draw() end)
+	if(self.cur_area.id == 9) then
+		-- title screen
+		pal(7,10)
+		spr(192,-1,-2,13,2)
+		pal(7,1)
+	end
 	self:draw_texts(bg)
+	pal(7,7)
 	self.player:draw()
 	for c in all(self.cats) do c:draw() end
 	for i in all(self.items) do i:draw() end
 	if(self.debug!="") game:draw_debug()
 
-	if(self.cur_area.id == 9) then
-		-- title screen
-		pal(7,title_color)
-		spr(192,0,0,13,2)
-	end
 end
 function game:draw_texts(bg)
 	cury = 1
