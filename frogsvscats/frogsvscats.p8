@@ -415,7 +415,7 @@ function game:load_items()
 		i.message = info[6]
 		add(self.items, i)
 		if(info[7]) then
-			i.sprite = sprite(i.w/8, i.h/8, {info[7]})
+			i.sprite = sprite(i.w/8, i.h/8, info[7])
 		end
 	end
 end
@@ -621,10 +621,25 @@ end
 -- position is 1px below lower-left corner of sprite ("on the ground")
 sprite = class()
 function sprite:constructor(w, h, frames)
-	if(type(frames) == "number") frames = {frames}
-	self.w, self.h, self.frames = w, h, frames
+	self.w, self.h = w, h
+	self:set_frames(frames)
 	self.cur_frame = 0
 	self.facing = 1
+end
+function sprite:set_frames(frames)
+	if type(frames) == "number" then
+		self.frames = {frames}
+	elseif frames.count then
+		local perrow = 16/self.w
+		local base_frame = frames[1] - 16*(self.h-1)
+		self.frames = {}
+		for i=0,frames.count,self.w do
+			if((i%perrow)==0) base_frame += 16*(self.h-1)
+			add(self.frames, base_frame + i*self.w)
+		end
+	else
+		self.frames = frames
+	end
 end
 function sprite:frame() return flr(self.cur_frame) end
 function sprite:draw(x, y)
@@ -964,7 +979,7 @@ end
 cat = class(entity)
 function cat:constructor(x,y)
 	super(cat, self,
-		x, y, sprite(2, 2, {64,66,68,70,72}))
+		x, y, sprite(2, 2, {64,count=5}))
 	self:animate(true)
 end
 function cat:update()
@@ -995,7 +1010,7 @@ end
 frog = class(entity)
 function frog:constructor(x,y)
 	super(frog, self,
-		x, y, sprite(2, 2, {0,2,4,6,8,10,12,14,32,34,36,38,40,42,44}))
+		x, y, sprite(2, 2, {0,count=16}))
 end
 function frog:base_fpf() return 1 end
 function frog:jump(dir)
