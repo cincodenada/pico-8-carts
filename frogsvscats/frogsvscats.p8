@@ -630,12 +630,15 @@ function sprite:set_frames(frames)
 	if type(frames) == "number" then
 		self.frames = {frames}
 	elseif frames.count then
-		local perrow = 16/self.w
-		local base_frame = frames[1] - 16*(self.h-1)
+		local base_frame = frames[1]
+		local next_row = 16
 		self.frames = {}
 		for i=0,frames.count,self.w do
-			if((i%perrow)==0) base_frame += 16*(self.h-1)
-			add(self.frames, base_frame + i*self.w)
+			if(i >= next_row) then
+				next_row += 16
+				base_frame += 16*(self.h-1)
+			end
+			add(self.frames, base_frame + i)
 		end
 	else
 		self.frames = frames
@@ -650,6 +653,10 @@ function sprite:draw(x, y)
 	--x += adj.x - 1
 	--y += adj.y + 1
 	spr(self.frames[fidx], x, y-self.h*8, self.w, self.h, flipped)
+	 for f in all(self.frames) do
+		game.debug = game.debug..f..","
+	 end
+	 game.debug = game.debug.."\n"
 end
 function sprite:move_frame(howmany)
 	if(howmany < 0) stop("not supported!")
