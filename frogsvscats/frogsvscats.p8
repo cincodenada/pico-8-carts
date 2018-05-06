@@ -206,8 +206,8 @@ local lore = {
 			},
 			items = {
 				{"an old scroll",99,15,3,1,"it seems to be blank. could the developer have run out of time to do anything with it?"},
-				{nil,97,11,1,1,nil,{138,139,140}},
-				{nil,101,11,1,1,nil,{138,139,140}},
+				{nil,97,12,1,1,nil,{138,139,140}},
+				{nil,101,12,1,1,nil,{138,139,140}},
 			},
 		},
 		{
@@ -418,13 +418,20 @@ end
 function game:load_items()
 	self.items = {}
 	for info in all(self.cur_area.items) do
-		local i = exists(info[2]*8,info[3]*8,info[4]*8,info[5]*8)
+		local x,y,w,h,frames = info[2],info[3],info[4],info[5],info[7]
+		local i
+		if(frames) then
+			i = visible(x*8,y*8,sprite(w,h,frames))
+			i.anim_state.active = true
+			i.anim_state.looping = true
+			i.fpf = 0.25
+			i.sprite:set_frame(rnd(#i.sprite.frames))
+		else
+			i = exists(x*8,y*8,w*8,h*8)
+		end
 		i.name = info[1]
 		i.message = info[6]
 		add(self.items, i)
-		if(info[7]) then
-			i.sprite = sprite(i.w/8, i.h/8, {info[7]})
-		end
 	end
 end
 function game:add_door(label,di,idx)
@@ -538,9 +545,9 @@ function game:draw()
 	for c in all(self.cats) do c:draw() end
 	self:draw_texts(bg)
 	pal(7,7)
+	for i in all(self.items) do i:draw() end
 	self.player:draw()
 	for n in all(self.npcs) do n:draw() end
-	for i in all(self.items) do i:draw() end
 	if(self.debug!="") game:draw_debug()
 end
 function game:draw_texts(bg)
@@ -633,7 +640,7 @@ function game:player_door()
 end
 function game:player_item()
 	for i in all(self.items) do
-		if(i:intersects(self.player) and not self.player:has_item(i.name)) return i
+		if(i:intersects(self.player) and i.name != "" and not self.player:has_item(i.name)) return i
 	end
 end
 
@@ -658,7 +665,6 @@ function sprite:draw(x, y)
 end
 function sprite:move_frame(howmany)
 	if(howmany < 0) stop("not supported!")
-	if(#self.frames == 5) printh(self.cur_frame.."+"..howmany.."frames")
 	self.last_frame = self.cur_frame
 	self.just_looped = false
 	self.cur_frame += howmany
@@ -749,23 +755,60 @@ function exists:intersects(other)
 	end
 	return false
 end
+function exists:update() end
 function exists:draw()
 	if(false) then
 		local bb=self:bb()
 		rect(bb.w,bb.n,bb.e,bb.s,8)
 	end
-	if(self.sprite) self.sprite:draw(self.x, self.y)
 end
 
 visible = class(exists)
 function visible:constructor(x,y,sprite)
+	if(h) w,sprite = sprite,nil
 	self.sprite = sprite
+	self.anim_state = {
+		active = false,
+		looping = false,
+		frame = 0,
+	}
+	self.frame_slow = {}
+	self.slow = 1
+	self.fpf = 1
 	super(visible, self, x, y, self.sprite.w*8, self.sprite.h*8)
 end
 function visible:draw()
-	self.sprite:draw(self.x, self.y)
+	if(self.sprite) self.sprite:draw(self.x, self.y)
 	super(visible).draw(self)
 end
+function visible:update()
+	if(self.anim_state.active) then
+		self.sprite:move_frame(self:real_fpf()/self.slow)
+
+		if(not self.anim_state.looping and self.sprite:entered(0)) then
+			self.anim_state.active = false
+			-- frame slows on one-shots expire
+			self.frame_slow = {}
+		end
+	end
+end
+function visible:set_frame_slow(first, last, slow)
+	for n=first,last do
+		self.frame_slow[n] = slow
+	end
+end
+function visible:real_fpf()
+	-- flag 8 is 2-frame sprites
+	local frame_slow = 1
+	if(self.frame_slow[self.sprite:frame()]) then
+		frame_slow = self.frame_slow[self.sprite:frame()]
+	elseif(self.sprite:flag(8)) then
+		frame_slow = 2
+	end
+
+	return self:base_fpf()/frame_slow
+end
+function visible:base_fpf() return self.fpf end
 
 door = class(visible)
 function door:constructor(x,y,label,info)
@@ -829,19 +872,12 @@ function entity:constructor(...)
 	super(entity, self, ...)
 	self.cur_move = nil
 	self.next_move = nil
-	self.anim_state = {
-		active = false,
-		looping = false,
-		frame = 0,
-	}
-	self.frame_slow = {}
-	self.slow = 1
 end
 function entity:update()
 	self.collided = false
 	self.hit_edge = false
 	self:update_pos()
-	self:update_anim()
+	super(entity).update(self)
 	self:check_collisions()
 	self:update_speed()
 end
@@ -878,33 +914,6 @@ function entity:update_speed()
 		end
 		if(self.cur_move.vx == 0 and self.cur_move.vy == 0) self.cur_move = nil
 	end
-end
-function entity:update_anim()
-	if(self.anim_state.active) then
-		self.sprite:move_frame(self:fpf()/self.slow)
-
-		if(not self.anim_state.looping and self.sprite:entered(0)) then
-			self.anim_state.active = false
-			-- frame slows on one-shots expire
-			self.frame_slow = {}
-		end
-	end
-end
-function entity:set_frame_slow(first, last, slow)
-	for n=first,last do
-		self.frame_slow[n] = slow
-	end
-end
-function entity:fpf()
-	-- flag 8 is 2-frame sprites
-	local frame_slow = 1
-	if(self.frame_slow[self.sprite:frame()]) then
-		frame_slow = self.frame_slow[self.sprite:frame()]
-	elseif(self.sprite:flag(8)) then
-		frame_slow = 2
-	end
-
-	return self:base_fpf()/frame_slow
 end
 function entity:base_fpf()
 	if(self.cur_move) then
