@@ -491,7 +491,7 @@ function game:enter_door(d)
 end
 function game:update()
 	self.debug_blocks = {}
-	self.debug = ""
+	self.debug = {}
 	self.player:update()
 	for c in all(self.cats) do
 		c:update()
@@ -520,7 +520,7 @@ function game:draw()
 	self.player:draw()
 	for c in all(self.cats) do c:draw() end
 	for i in all(self.items) do i:draw() end
-	if(self.debug!="") game:draw_debug()
+	if(#self.debug!=0) game:draw_debug()
 
 end
 function game:draw_texts(bg)
@@ -554,7 +554,7 @@ function game:draw_texts(bg)
 	end
 end
 function game:dbg(txt)
-	self.debug = self.debug..txt.."\n"
+	add(self.debug, txt)
 end
 function game:draw_debug()
 	for b in all(self.debug_blocks) do
@@ -564,7 +564,9 @@ function game:draw_debug()
 		self:save_camera()
 		camera(0,0)
 		rectfill(0,0,128,50,0)
-		print(self.debug,1,0,7)
+		cursor(1,0)
+		color(7)
+		foreach(self.debug, print)
 		self:load_camera()
 	end
 end
@@ -881,12 +883,14 @@ function entity:update_speed()
 	end
 end
 function entity:update_anim()
+	game:dbg(self.anim_state.active)
 	if(self.anim_state.active) then
+		game:dbg(self:get_sprite().cur_frame)
 		-- the slow here is a global slow for debug
 		-- separate from frame slows
-		self.sprite:move_frame(self:fpf()/self.slow)
+		self:get_sprite():move_frame(self:fpf()/self.slow)
 
-		if(not self.anim_state.looping and self.sprite:entered(0)) then
+		if(not self.anim_state.looping and self:get_sprite():entered(0)) then
 			self.anim_state.active = false
 			-- frame slows on one-shots expire
 			self.frame_slow = {}
@@ -898,6 +902,10 @@ end
 function entity:set_frame(which)
 	self:get_sprite():set_frame(which)
 end
+function entity:reset_anim()
+	self:set_frame(0)
+	self.anim_state.active = false
+end
 function entity:set_frame_slow(first, last, slow)
 	for n=first,last do
 		self.frame_slow[n] = slow
@@ -906,9 +914,9 @@ end
 function entity:fpf()
 	-- flag 8 is 2-frame sprites
 	local frame_slow = 1
-	if(self.frame_slow[self.sprite:frame()]) then
-		frame_slow = self.frame_slow[self.sprite:frame()]
-	elseif(self.sprite:flag(8)) then
+	if(self.frame_slow[self:get_sprite():frame()]) then
+		frame_slow = self.frame_slow[self:get_sprite():frame()]
+	elseif(self:get_sprite():flag(8)) then
 		frame_slow = 2
 	end
 
@@ -1055,7 +1063,7 @@ end
 function frog:update_jump()
 	if(self.jumping) then
 		-- manage start/end of jump
-		if(self.sprite:entered(5)) then
+		if(self:get_sprite():entered(5)) then
 			-- start movement
 			-- if we're gonna run into something, make it a leap
 			local jump_x = 16
@@ -1077,15 +1085,15 @@ function frog:update_jump()
 			end
 		end
 
-		if(self.sprite:entered(13) and self.next_jump and not self:is_floating()) then
+		if(self:get_sprite():entered(13) and self.next_jump and not self:is_floating()) then
 			if(self.leaping_up) then
 				game:play_sound("leap")
 			else
 				game:play_sound("hop")
 			end
 			self.next_jump = false
-			self.sprite:set_frame(4)
-		elseif(self.sprite:entered(0)) then
+			self:get_sprite():set_frame(4)
+		elseif(self:get_sprite():entered(0)) then
 			self:reset_jump()
 		end
 	end
@@ -1104,10 +1112,10 @@ function frog:reset_jump()
 end
 function frog:attack()
 	self.attacking = true
-	self:set_sprite('attack')
 	self:reset_jump()
+	self:reset_anim()
 	self:clear_move()
-	self:set_frame(0)
+	self:set_sprite('attack')
 	self:animate(false)
 	sfx(18)
 	sfx(19)
@@ -1139,7 +1147,7 @@ function player:update()
 	super(player).update(self)
 	self:update_jump()
 
-	if(self.y - self.sprite.h > 127) then
+	if(self.y - self:get_sprite().h > 127) then
 		game:play_sound("die")
 	-- only start player at the very beginning the first time
 		game:reset(200)
