@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 16
 __lua__
--- frogs vs. cats v1.1.1
+-- frogs vs. cats v1.1.2
 -- by joel bradshaw
 -- vim: sw=2 ts=2 sts=2 noet foldmethod=marker foldmarker=-->8,---
 function class(superclass)
