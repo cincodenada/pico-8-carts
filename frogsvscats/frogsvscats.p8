@@ -312,7 +312,8 @@ local game = {
 		win = 14,
 		get = 15,
 		tinyhop = 16,
-	}
+	},
+	door_state = {},
 }
 function game:reset()
 	self.player = player(0,120)
@@ -336,6 +337,8 @@ function game:load_area(id, from_door, player_pos)
 	local a = lore.areas[id]
 	local m = lore.maps[a.mapid]
 	self.cur_area, self.cur_map = a, m
+
+	if(not self.door_state[id]) self.door_state[id] = {}
 
 	self.cats = {}
 	for c in all(m.cats) do
@@ -480,16 +483,22 @@ function game:inspect_door(d)
 		add(self.texts,{msg="press ❎/z again to enter", col=7, x=self.x+5})
 	end
 end
+function game:get_state(door)
+	return self.door_state[self.cur_area.id][door.label]
+end
+function game:get_state(door, new)
+	self.door_state[self.cur_area.id][door.label] = new
+end
 function game:enter_door(d)
-	if(d.label == "grate" and not d.unlocked and self.cur_area.id==5) then
-		if(not d.swept) then
+	if(d.label == "grate" and self:get_state(d) != "unlocked" and self.cur_area.id==5) then
+		if(self:get_state(d) == nil) then
 			game:show_message("the grate doesn't budge. you sweep away some debris and spy a keyhole that seems promising.")
-			d:sweep()
+			self.set_state(d, "swept")
 		end
 		if(self.player:has_item("silver key")) then
 			game:show_message("you try the silver key in the grate. it opens with a loud creak. there's an old musty culvert behind it that's plenty wide for a frog to fit through.")
 			self:play_sound("creak")
-			d:unlock()
+			self.set_state(d, "unlocked")
 		else
 			if(self.player:has_item("blue key")) game:show_message("you try the blue key, but the lock doesn't budge",5)
 			if(self.player:has_item("green key")) game:show_message("you try your green key, but it doesn't even fit",5)
