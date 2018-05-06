@@ -486,22 +486,26 @@ end
 function game:get_state(door)
 	return self.door_state[self.cur_area.id][door.label]
 end
-function game:get_state(door, new)
+function game:set_state(door, new)
 	self.door_state[self.cur_area.id][door.label] = new
 end
 function game:enter_door(d)
 	if(d.label == "grate" and self:get_state(d) != "unlocked" and self.cur_area.id==5) then
+		local just_swept = false
 		if(self:get_state(d) == nil) then
+			just_swept = true
 			game:show_message("the grate doesn't budge. you sweep away some debris and spy a keyhole that seems promising.")
-			self.set_state(d, "swept")
+			self:set_state(d, "swept")
 		end
 		if(self.player:has_item("silver key")) then
 			game:show_message("you try the silver key in the grate. it opens with a loud creak. there's an old musty culvert behind it that's plenty wide for a frog to fit through.")
 			self:play_sound("creak")
-			self.set_state(d, "unlocked")
+			self:set_state(d, "unlocked")
 		else
-			if(self.player:has_item("blue key")) game:show_message("you try the blue key, but the lock doesn't budge",5)
-			if(self.player:has_item("green key")) game:show_message("you try your green key, but it doesn't even fit",5)
+			local tried_key = false
+			if(self.player:has_item("blue key")) game:show_message("you try the blue key, but the lock doesn't budge",5) tried_key=true
+			if(self.player:has_item("green key")) game:show_message("you try your green key, but it doesn't even fit",5) tried_key=true
+			if(not tried_key and self:get_state(d) == "swept" and not just_swept) game:show_message("the grate still doesn't budge.")
 			self:play_sound("nope")
 		end
 		return
@@ -1180,8 +1184,9 @@ function player:inspect()
 				credits.countdown = 10*30
 			else
 				if(self:has_item("green key")) game:show_message("you try your green key, but the chest is unyielding",5)
+				if(self:has_item("silver key")) game:show_message("you try the silver key again, but of course it does nothing.",5)
 				game:play_sound("nope")
-				game:show_message("it's pretty locked.",5)
+				game:show_message("the chest is pretty locked.",5)
 			end
 		else
 			game:show_message("you found a "..item.name.."!", 5)
