@@ -1182,12 +1182,12 @@ function player:constructor(...)
 	self.items = {}
 end
 function player:update()
-	if(btnp(0)) self:jump(-1)
-	if(btnp(1)) self:jump(1)
-	if(btnp(2)) self:leap(true)
+	if(btnq(0)) self:jump(-1)
+	if(btnq(1)) self:jump(1)
+	if(btnq(2)) self:leap(true)
 
-	if(btnp(4)) self:inspect()
-	if(btnp(5)) self:attack()
+	if(btnq(4)) self:inspect()
+	if(btnq(5)) self:attack()
 
 	if(false) then
 		next_area = game.cur_area.id+1
@@ -1270,8 +1270,23 @@ function _init()
 	game:reset()
 end
 
+local btnstate = {}
 function _update()
+	-- frame-by-frame
+	if(not btnp(4)) then
+		for n=0,5 do
+			if(btnp(n)) btnstate[n] = true
+		end
+		btnstate[4] = false
+		return
+	end
 	game:update()
+	if(btnp(4)) btnstate = {}
+end
+
+function btnq(n)
+	--return btnp(n)
+	return btnstate[n]
 end
 
 function _draw()
