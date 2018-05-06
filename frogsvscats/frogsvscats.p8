@@ -95,6 +95,7 @@ local credits = {
 		{"emotional support","myka dubay","anna barton"},
 		{"inspiration and reference code","finn aka @relsqui"},
 		{"beta testers","friendly ludum dare participants"},
+		{"title font","pixel noir by mirz123"},
 	},
 	name = "joel bradshaw",
 	countdown = nil,
@@ -177,7 +178,7 @@ local lore = {
 				west=4,
 			},
 			items = {
-				{"silver key",65,15,2,1,"you find a small crack in the wall. further inspection reveals a glint. you reach in and pull out a key!"},
+				{"silver key",77,15,2,1,"you find a small crack in the wall. further inspection reveals a glint. you reach in and pull out a key!"},
 			},
 		},
 		{
