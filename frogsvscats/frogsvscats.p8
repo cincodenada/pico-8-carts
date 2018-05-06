@@ -634,7 +634,7 @@ function sprite:set_frames(frames)
 		local base_frame = frames[1]
 		local next_row = 16
 		self.frames = {}
-		for i=0,frames.count*self.w,self.w do
+		for i=0,(frames.count-1)*self.w,self.w do
 			if(i >= next_row) then
 				next_row += 16
 				base_frame += 16*(self.h-1)
@@ -883,9 +883,9 @@ function entity:update_speed()
 	end
 end
 function entity:update_anim()
-	game:dbg(self.anim_state.active)
+	--game:dbg(self.anim_state.active)
 	if(self.anim_state.active) then
-		game:dbg(self:get_sprite().cur_frame)
+		--game:dbg(self:get_sprite().cur_frame)
 		-- the slow here is a global slow for debug
 		-- separate from frame slows
 		self:get_sprite():move_frame(self:fpf()/self.slow)
