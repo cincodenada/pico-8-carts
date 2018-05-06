@@ -215,6 +215,8 @@ local lore = {
  ⬆️ : jump up onto platforms\
 ❎/z: inspect your location\
 use doors to enter commands",
+			-- for the label image, also shift right by 1px
+			--intro="\n\n\n  a text-adventure platformer\n   created for ludum dare 41",
 			links = {
 				start = 1,
 			},
@@ -512,7 +514,7 @@ function game:draw()
 	if(self.cur_area.id == 9) then
 		-- title screen
 		pal(7,10)
-		spr(192,8*1.5-1,-2,13,2)
+		spr(192,8*1.5,-2,13,2)
 		pal(7,1)
 	end
 	self:draw_texts(bg)
