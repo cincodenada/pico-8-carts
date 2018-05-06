@@ -1182,12 +1182,12 @@ function player:constructor(...)
 	self.items = {}
 end
 function player:update()
-	if(btnq(0)) self:jump(-1)
-	if(btnq(1)) self:jump(1)
-	if(btnq(2)) self:leap(true)
+	if(btnp(0)) self:jump(-1)
+	if(btnp(1)) self:jump(1)
+	if(btnp(2)) self:leap(true)
 
-	if(btnq(4)) self:inspect()
-	if(btnq(5)) self:attack()
+	if(btnp(4)) self:inspect()
+	if(btnp(5)) self:attack()
 
 	if(false) then
 		next_area = game.cur_area.id+1
@@ -1269,44 +1269,54 @@ local framestep = {
 	enabled = false,
 	btnstate = {},
 	trigger = 4,
+	_btnp = btnp,
 }
-function framestep:init()
-	menuitem(1,"framestep on", framestep.toggle)
+function framestep:add_menuitem(n)
+	menuitem(n,"framestep on", self.callback)
+	self.menu_idx = n
 end
--- This function is "static" so it can be a callback
+-- This function is a "static" wrapper to toggle()
+function framestep.callback() framestep:toggle() end
 function framestep:toggle()
-	framestep.enabled = not framestep.enabled
+	self.enabled = not self.enabled
 
-	local to = framestep.enabled and "off" or "on"
-	menuitem(1,"framestep "..to, framestep.toggle)
+	if self.menu_idx then
+		local to = self.enabled and "off" or "on"
+		menuitem(self.menu_idx,"framestep "..to, self.callback)
+	end
 end
 function framestep:update()
-	if(self.enabled and not btnp(self.trigger)) then
-		if(self.just_stepped) then
-			self.just_stepped = false
-			self.btnstate = {}
-		end
+	if(self.enabled and not self._btnp(self.trigger)) then
+		if(self.just_stepped) self.btnstate = {}
+		self.just_stepped = false
 
+		-- Store any buttonpresses for later
 		for n=0,5 do
-			if(btnp(n)) self.btnstate[n] = true
+			if(self._btnp(n)) self.btnstate[n] = true
 		end
+		-- Clear our trigger button
 		self.btnstate[self.trigger] = false
+
+		-- Skip this frame
 		return true
 	else
+		-- Either disabled or button is pressed, don't skip
 		self.just_stepped = true
 		return false
 	end
 end
 function framestep:button(n)
-	if(self.enabled) then
-	  return self.btnstate[n]
-	else
-	  return btnp(n)
-	end
+	-- Return our saved buttons if enabled, otherwise passthrough
+	if(self.enabled) return self.btnstate[n]
+	return self._btnp(n)
 end
+-- If you don't want to override btnp() for whatever reason
+-- You can omit this and use framestep:button() directly
+-- Or rename it and use that
+function btnp(n) return framestep:button(n) end
 
 function _init()
-	framestep:init()
+	framestep:add_menuitem(1)
 	credits:init()
 	game:reset()
 end
@@ -1315,8 +1325,6 @@ function _update()
 	if(framestep:update()) return
 	game:update()
 end
-
-function btnq(n) return framestep:button(n) end
 
 function _draw()
 	if(credits.countdown and credits.countdown <= 0) then
