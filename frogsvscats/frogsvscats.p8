@@ -410,7 +410,7 @@ end
 function game:load_items()
 	self.items = {}
 	for info in all(self.cur_area.items) do
-		local i = exists(info[2]*8,info[3]*8,info[4]*8,info[5]*8)
+		local i = visible(info[2]*8,info[3]*8,info[4]*8,info[5]*8)
 		i.name = info[1]
 		i.message = info[6]
 		add(self.items, i)
@@ -701,26 +701,26 @@ function sprite:flag(n)
 	return fget(self:cur_sprite() + subidx, n%8)
 end
 
-exists = class()
-function exists:constructor(x,y,w,h)
+has_location = class()
+function has_location:constructor(x,y,w,h)
 	self.x, self.y, self.w, self.h  = x, y, w, h
 end
-function exists:center()
+function has_location:center()
 	return {
 		x=self.x + self.w/2,
 		y=self.y - self.h/2
 	}
 end
 -- returns boundaries, idx are buttons (lrud)
-function exists:b(idx)
+function has_location:b(idx)
 	if(idx == 0 or idx=='w') return flr(self.x)
 	if(idx == 1 or idx=='e') return flr(self.x+self.w-1)
 	if(idx == 2 or idx=='n') return flr(self.y-self.h)
 	if(idx == 3 or idx=='s') return flr(self.y-1)
 end
-function exists:contains_x(p) return (p >= self:b(0) and p <= self:b(1)) end
-function exists:contains_y(p) return (p >= self:b(2) and p <= self:b(3)) end
-function exists:bb()
+function has_location:contains_x(p) return (p >= self:b(0) and p <= self:b(1)) end
+function has_location:contains_y(p) return (p >= self:b(2) and p <= self:b(3)) end
+function has_location:bb()
 	local c = self:center()
 	return {
 		w=self:b(0),
@@ -731,7 +731,7 @@ function exists:bb()
 		cy=flr(c.y),
 	}
 end
-function exists:intersects(other)
+function has_location:intersects(other)
 	local me = self:bb()
 	local them = other:bb()
 	-- maybe not super efficient
@@ -747,21 +747,27 @@ function exists:intersects(other)
 	end
 	return false
 end
-function exists:draw()
+function has_location:draw()
 	if(false) then
 		local bb=self:bb()
 		rect(bb.w,bb.n,bb.e,bb.s,8)
 	end
-	if(self.sprite) self.sprite:draw(self.x, self.y)
 end
 
-visible = class(exists)
+visible = class(has_location)
 function visible:constructor(x,y,sprite)
 	self.sprite = sprite
+	self.sprites = {}
 	super(visible, self, x, y, self.sprite.w*8, self.sprite.h*8)
 end
+function visible:add_sprite(key, sprite) self.sprites[key] = sprite end
+function visible:set_sprite(key) self.cur_sprite = key end
 function visible:draw()
-	self.sprite:draw(self.x, self.y)
+	if self.cur_sprite  then
+		self.sprites[self.cur_sprite]:draw(self.x, self.y)
+	elseif self.sprite then
+		self.sprite:draw(self.x, self.y)
+	end
 	super(visible).draw(self)
 end
 
@@ -883,6 +889,13 @@ function entity:update_anim()
 			self.frame_slow = {}
 		end
 	end
+end
+function entity:get_sprite()
+	if(self.cur_sprite) return self.sprites[cur_sprite]
+	return self.sprite
+end
+function entity:set_frame(which)
+	self:get_sprite().set_frame(which)
 end
 function entity:set_frame_slow(first, last, slow)
 	for n=first,last do
