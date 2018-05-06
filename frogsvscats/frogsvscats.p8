@@ -1131,7 +1131,7 @@ function frog:attack()
 	self:reset_anim()
 	self:clear_move()
 	self:set_sprite('attack')
-	self:set_frame_slow(2,2,10)
+	self:set_frame_slow(2,2,20)
 	self:animate(false)
 	sfx(18)
 	sfx(19)
@@ -1144,14 +1144,19 @@ function frog:update_anim()
 		if(self:get_sprite():frame() == 2) then
 			if(self:get_sprite():entered(2)) then
 				self.tongue_frame = 0
+				self.tongue_pos = 0
 				self.tongue_dir = 1
 			else
-				if(self.tongue_frame == 5) self.tongue_dir=-1
-				self.tongue_frame += self.tongue_dir
+				if(self.tongue_frame < 3) then
+					self.tongue_frame += self.tongue_dir
+				else
+					self.tongue_pos += self.tongue_dir
+					if(self.tongue_pos == 5) self.tongue_dir = -1
+				end
 			end
-			local tp = self:tongue_pos()
-			self:set_aux('tongue',tp.x+self.tongue_frame*2*self.facing, tp.y)
-			self:get_sprite('tongue'):set_frame(tongue_frames[self.tongue_frame])
+			local tp = self:tongue_origin()
+			self:set_aux('tongue',tp.x+self.tongue_pos*self.facing, tp.y)
+			self:get_sprite('tongue'):set_frame(tongue_frames[self.tongue_frame+1])
 		elseif self.anim_state.active == false then
 			self.attacking = false
 			self:remove_aux('tongue')
@@ -1161,12 +1166,12 @@ end
 function frog:draw()
 	super(frog).draw(self)
 	if(self.attacking and self.tongue_frame) then
-		local tp = self:tongue_pos()
+		local tp = self:tongue_origin()
 		line(self.x+tp.x, self.y+tp.y-3,
-		     self.x+tp.x+self.tongue_frame*2, self.y+tp.y-3, 8)
+		     self.x+tp.x+self.tongue_pos, self.y+tp.y-3, 8)
 	end
 end
-function frog:tongue_pos()
+function frog:tongue_origin()
 	return {x=self.w*self.facing, y=-self.h+8}
 end
 
