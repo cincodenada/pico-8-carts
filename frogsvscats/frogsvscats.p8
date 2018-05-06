@@ -514,7 +514,8 @@ function game:draw()
 	if(self.cur_area.id == 9) then
 		-- title screen
 		pal(7,10)
-		spr(192,8*1.5,-2,13,2)
+		local tw, th=13*8-2,12
+		sspr(0,98,tw,th,8*1.5,0,tw,th)
 		pal(7,1)
 	end
 	self:draw_texts(bg)
