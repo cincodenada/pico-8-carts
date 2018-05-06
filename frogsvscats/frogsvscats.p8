@@ -211,10 +211,10 @@ local lore = {
 			id = 9,
 			mapid = 6,
 			intro = "\n\n\
-  ⬅️➡️: hop around\
-   ⬆️ : jump up onto platforms\
-  ❎/z: inspect your location\
-  use doors to enter commands",
+⬅️➡️: hop around\
+ ⬆️ : jump up onto platforms\
+❎/z: inspect your location\
+use doors to enter commands",
 			-- for the label image, also shift right by 1px
 			--intro="\n\n\n  a text-adventure platformer\n   created for ludum dare 41",
 			links = {
@@ -279,7 +279,7 @@ local lore = {
 		{
 			x=0,y=0,w=16,
 			px=0,py=15,
-			text_offset = 0,
+			text_offset = 1,
 		},
 	},
 }
