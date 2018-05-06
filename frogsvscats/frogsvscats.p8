@@ -126,7 +126,7 @@ local lore = {
 				east = 3,
 			},
 			items = {
-				{"blue key",39,13,3,1,"the water is nice and cool on your froggy feet. you peer down idly and notice something shiny. you pick it up."},
+				{"blue key",51,13,3,1,"the water is nice and cool on your froggy feet. you peer down idly and notice something shiny. you pick it up."},
 			},
 		},
 		{
@@ -152,7 +152,7 @@ local lore = {
 				east=6,
 			},
 			items = {
-				{"green key",55,15,3,1,"you peer into the weeds and notice something shiny. it's a key!"},
+				{"green key",67,15,3,1,"you peer into the weeds and notice something shiny. it's a key!"},
 			},
 		},
 		{
@@ -190,7 +190,7 @@ local lore = {
 				tunnel=8
 			},
 			items = {
-				{"locked chest",93,15,2,1,"you see a big oak chest. it seems pretty immune to brute force. there are holes in the side, but not large enough to see anything.",96},
+				{"locked chest",105,15,2,1,"you see a big oak chest. it seems pretty immune to brute force. there are holes in the side, but not large enough to see anything.",96},
 			},
 		},
 		{
@@ -204,7 +204,7 @@ local lore = {
 				grate = 5,
 			},
 			items = {
-				{"an old scroll",87,15,3,1,"it seems to be blank. could the developer have run out of time to do anything with it?"},
+				{"an old scroll",99,15,3,1,"it seems to be blank. could the developer have run out of time to do anything with it?"},
 			},
 		},
 		{
