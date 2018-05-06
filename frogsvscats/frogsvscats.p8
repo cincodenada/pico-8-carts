@@ -345,6 +345,9 @@ function game:load_area(id, from_door, player_pos)
 		end
 	end
 
+	-- For the frog at the end
+	self.npcs = {}
+
 	self.doors = {}
 	if(not self.cur_map.doors) self.cur_map.doors = {}
 	for d in all(game:find_doors()) do
@@ -496,9 +499,8 @@ function game:update()
 	self.debug_blocks = {}
 	self.debug = ""
 	self.player:update()
-	for c in all(self.cats) do
-		c:update()
-	end
+	for c in all(self.cats) do c:update() end
+	for n in all(self.npcs) do n:update() end
 	if(self.to_scoot != 0) then
 		self.cur_move = nil
 		self.next_move = nil
@@ -530,10 +532,11 @@ function game:draw()
 		sspr(70,99,tw,2,x+5,y+4)
 		pal(7,7)
 	end
+	for c in all(self.cats) do c:draw() end
 	self:draw_texts(bg)
 	pal(7,7)
 	self.player:draw()
-	for c in all(self.cats) do c:draw() end
+	for n in all(self.npcs) do n:draw() end
 	for i in all(self.items) do i:draw() end
 	if(self.debug!="") game:draw_debug()
 end
@@ -1150,7 +1153,7 @@ function player:inspect()
 			if(self:has_item("blue key")) then
 				if(self:has_item("green key")) game:show_message("you try your green key, but the chest is unyielding",5)
 				game:show_message("you try the blue key and it unlocks the chest! inside is a very sad small frog! you're a hero!")
-				add(game.cats, tinyfriend(self.x+self.w, self.y-8))
+				add(game.npcs, tinyfriend(self.x+self.w, self.y-8))
 				game:play_sound("win")
 				credits.countdown = 10*30
 			else
