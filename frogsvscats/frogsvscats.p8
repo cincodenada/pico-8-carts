@@ -1131,7 +1131,7 @@ function frog:attack()
 	self:reset_anim()
 	self:clear_move()
 	self:set_sprite('attack')
-	self:set_frame_slow(2,2,20)
+	self:set_frame_slow(2,2,10)
 	self:animate(false)
 	sfx(18)
 	sfx(19)
@@ -1139,6 +1139,7 @@ end
 function frog:update_anim()
 	super(frog).update_anim(self)
 	-- If we're ready to start the tongue
+	local tongue_frames = {0,1,2,2,3,3}
 	if(self.attacking) then
 		if(self:get_sprite():frame() == 2) then
 			if(self:get_sprite():entered(2)) then
@@ -1146,11 +1147,12 @@ function frog:update_anim()
 				self.tongue_dir = 1
 			else
 				if(self.tongue_frame == 5) self.tongue_dir=-1
-				self.tongue_frame += self.tongue_dir*0.5
+				self.tongue_frame += self.tongue_dir
 			end
-			self:set_aux('tongue',self.w+self.tongue_frame, -self.h+8)
-			self:get_sprite('tongue'):set_frame(min(self.tongue_frame, 2))
-		elseif self:get_sprite():entered(0) then
+			local tp = self:tongue_pos()
+			self:set_aux('tongue',tp.x+self.tongue_frame*2*self.facing, tp.y)
+			self:get_sprite('tongue'):set_frame(tongue_frames[self.tongue_frame])
+		elseif self.anim_state.active == false then
 			self.attacking = false
 			self:remove_aux('tongue')
 		end
@@ -1159,9 +1161,13 @@ end
 function frog:draw()
 	super(frog).draw(self)
 	if(self.attacking and self.tongue_frame) then
-		local ts = {x=self.x+self.w*self.facing, y=self.y-self.h+8}
-		line(ts.x, ts.y, ts.x+self.tongue_frame, ts.y, 8)
+		local tp = self:tongue_pos()
+		line(self.x+tp.x, self.y+tp.y-3,
+		     self.x+tp.x+self.tongue_frame*2, self.y+tp.y-3, 8)
 	end
+end
+function frog:tongue_pos()
+	return {x=self.w*self.facing, y=-self.h+8}
 end
 
 player = class(frog)
@@ -1347,8 +1353,8 @@ __gfx__
 000000000000bb00000000000000bb00000000000000bb0000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000077bbbb000000000077bbbb000000000077bbbb000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000071bbb7000000000071bbb8000000000071bbb0000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000bbbbb70000000000bbbbbbb000000000bbbbbb8880000000800000008800000000000000000000000000000000000000000000000000000000000000
-0000000bbbbb77000000000bbbbbb7000000000bbbbbbbb080000000880000008800000000000000000000000000000000000000000000000000000000000000
+00000000bbbbb70000000000bbbbbbb000000000bbbbbb8800000000800000008000000088000000000000000000000000000000000000000000000000000000
+0000000bbbbb77000000000bbbbbb7000000000bbbbbbbb000000000800000008800000088000000000000000000000000000000000000000000000000000000
 000000bbbbbb7000000000bbbbbb7000000000bbbbbb700000000000000000000000000000000000000000000000000000000000000000000000000000000000
 0000bbbbbbbb70000000bbbbbbbb70000000bbbbbbbb700000000000000000000000000000000000000000000000000000000000000000000000000000000000
 000bbbbbbbb77000000bbbbbbbb77000000bbbbbbbb7700000000000000000000000000000000000000000000000000000000000000000000000000000000000
