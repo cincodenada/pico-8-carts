@@ -624,7 +624,6 @@ function sprite:constructor(w, h, frames)
 	self.w, self.h = w, h
 	self:set_frames(frames)
 	self.cur_frame = 0
-	self.facing = 1
 end
 function sprite:set_frames(frames)
 	if type(frames) == "number" then
@@ -645,11 +644,11 @@ function sprite:set_frames(frames)
 	end
 end
 function sprite:frame() return flr(self.cur_frame) end
-function sprite:draw(x, y)
-	local flipped = (self.facing==-1)
+function sprite:draw(x, y, facing)
+	local flipped = (facing==-1)
 	local fidx = self:frame()+1
 	-- todo: this should be speed-dependendent and doesn't work
-	--local adj = self:adj(fidx)
+	--local adj = self:adj(fidx, facing)
 	--x += adj.x - 1
 	--y += adj.y + 1
 	spr(self.frames[fidx], x, y-self.h*8, self.w, self.h, flipped)
@@ -683,12 +682,12 @@ end
 -- to stay with animation per frame
 --
 -- this gets our adjustment for this frame
-function sprite:adj(n)
+function sprite:adj(n, facing)
 	-- sprite with adjustment data is the lower-left sprite
 	local adjsprite = self.frames[n] + 16
 	local flagbyte = fget(adjsprite)
 	return {
-		x=flr(shr(shl(flagbyte, 8), 12))*self.facing,
+		x=flr(shr(shl(flagbyte, 8), 12))*facing,
 		y=shr(shl(flagbyte, 12), 12)
 	}
 end
@@ -758,6 +757,7 @@ visible = class(has_location)
 function visible:constructor(x,y,sprite)
 	self.sprite = sprite
 	self.sprites = {}
+	self.facing = 1
 	super(visible, self, x, y, self.sprite.w*8, self.sprite.h*8)
 end
 function visible:add_sprite(key, sprite) self.sprites[key] = sprite end
@@ -768,7 +768,7 @@ function visible:get_sprite()
 end
 function visible:draw()
 	local sprite = self:get_sprite()
-	if(sprite) sprite:draw(self.x, self.y)
+	if(sprite) sprite:draw(self.x, self.y, self.facing)
 	super(visible).draw(self)
 end
 
@@ -882,6 +882,8 @@ function entity:update_speed()
 end
 function entity:update_anim()
 	if(self.anim_state.active) then
+		-- the slow here is a global slow for debug
+		-- separate from frame slows
 		self.sprite:move_frame(self:fpf()/self.slow)
 
 		if(not self.anim_state.looping and self.sprite:entered(0)) then
@@ -925,14 +927,14 @@ function entity:animate(looping)
 end
 -- relative to facing!
 function entity:move(dx,dy)
-	self.x += dx*self.sprite.facing
+	self.x += dx*self.facing
 	self.y += dy
 end
 function entity:add_move(dx,dy,vx,vy)
-	if(not self.next_move) self.next_move = { dx=abs(dx), dy=abs(dy), vx=vx*self.sprite.facing, vy=vy, x0=self.x, y0=self.y }
+	if(not self.next_move) self.next_move = { dx=abs(dx), dy=abs(dy), vx=vx*self.facing, vy=vy, x0=self.x, y0=self.y }
 end
 function entity:replace_move(dx,dy,vx,vy)
-	self.cur_move = { dx=abs(dx), dy=abs(dy), vx=vx*self.sprite.facing, vy=vy, x0=self.x, y0=self.y }
+	self.cur_move = { dx=abs(dx), dy=abs(dy), vx=vx*self.facing, vy=vy, x0=self.x, y0=self.y }
 end
 function entity:is_floating()
 	return not game:get_colliding(self.x,self.y,self.w)
@@ -1018,7 +1020,7 @@ function cat:update()
 	-- turn around if we hit things or the edge
 	if(self.cur_move) then
 		if(self.collided or self.hit_edge) self.cur_move.vx *= -1
-		self.sprite.facing = sgn(self.cur_move.vx)
+		self.facing = sgn(self.cur_move.vx)
 	end
 end
 
@@ -1032,14 +1034,14 @@ function frog:base_fpf() return 1 end
 function frog:jump(dir)
 	if(self:is_floating()) return
 	if(self.jumping and not self.leaping) then
-		if(dir == self.sprite.facing) then
+		if(dir == self.facing) then
 			self.next_jump = dir
 		else
 			self.next_jump = nil
 		end
 		return
 	end
-	if(dir) self.sprite.facing = dir
+	if(dir) self.facing = dir
 	self.jumping = true
 
 	self:animate(false)
@@ -1057,8 +1059,8 @@ function frog:update_jump()
 			-- if we're gonna run into something, make it a leap
 			local jump_x = 16
 			local jump_y = 8
-			if(game:get_colliding(self.x + jump_x*self.sprite.facing, self:b('n'), self.w, self.h)) then
-				if(not game:get_colliding(self.x + jump_x*self.sprite.facing, self:b('n') - jump_y, self.h)) then
+			if(game:get_colliding(self.x + jump_x*self.facing, self:b('n'), self.w, self.h)) then
+				if(not game:get_colliding(self.x + jump_x*self.facing, self:b('n') - jump_y, self.h)) then
 					self.leaping = true
 				end
 			end
