@@ -1265,15 +1265,25 @@ function player:has_item(name)
 	return false
 end
 
+local btnstate = {}
+local framestep = false
+function toggle_framestep()
+	framestep = not framestep
+
+	local to = "on"
+	if(framestep) to = "off"
+	menuitem(1,"framestep "..to, toggle_framestep)
+end
 function _init()
+	menuitem(1,"framestep on", toggle_framestep)
 	credits:init()
 	game:reset()
 end
 
-local btnstate = {}
+
 function _update()
 	-- frame-by-frame
-	if(not btnp(4)) then
+	if(framestep and not btnp(4)) then
 		for n=0,5 do
 			if(btnp(n)) btnstate[n] = true
 		end
@@ -1285,8 +1295,11 @@ function _update()
 end
 
 function btnq(n)
-	--return btnp(n)
-	return btnstate[n]
+	if(framestep) then
+	  return btnstate[n]
+	else
+	  return btnp(n)
+	end
 end
 
 function _draw()
