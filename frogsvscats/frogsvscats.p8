@@ -762,12 +762,13 @@ function visible:constructor(x,y,sprite)
 end
 function visible:add_sprite(key, sprite) self.sprites[key] = sprite end
 function visible:set_sprite(key) self.cur_sprite = key end
+function visible:get_sprite()
+	if(self.cur_sprite) return self.sprites[self.cur_sprite]
+	return self.sprite
+end
 function visible:draw()
-	if self.cur_sprite  then
-		self.sprites[self.cur_sprite]:draw(self.x, self.y)
-	elseif self.sprite then
-		self.sprite:draw(self.x, self.y)
-	end
+	local sprite = self:get_sprite()
+	if(sprite) sprite:draw(self.x, self.y)
 	super(visible).draw(self)
 end
 
@@ -887,15 +888,13 @@ function entity:update_anim()
 			self.anim_state.active = false
 			-- frame slows on one-shots expire
 			self.frame_slow = {}
+			-- if we were on an alt sprite, reset
+			self.cur_sprite = nil
 		end
 	end
 end
-function entity:get_sprite()
-	if(self.cur_sprite) return self.sprites[cur_sprite]
-	return self.sprite
-end
 function entity:set_frame(which)
-	self:get_sprite().set_frame(which)
+	self:get_sprite():set_frame(which)
 end
 function entity:set_frame_slow(first, last, slow)
 	for n=first,last do
@@ -1027,6 +1026,7 @@ frog = class(entity)
 function frog:constructor(x,y)
 	super(frog, self,
 		x, y, sprite(2, 2, {0,count=16}))
+	self:add_sprite('attack',sprite(2,2,{64,count=3}))
 end
 function frog:base_fpf() return 1 end
 function frog:jump(dir)
@@ -1099,6 +1099,17 @@ function frog:reset_jump()
 	self.leaping = false
 	self.leaping_up = false
 end
+function frog:attack()
+	self.attacking = true
+	self:set_sprite('attack')
+	self:set_frame(0)
+	self:animate(false)
+	sfx(18)
+	sfx(19)
+end
+function frog:draw()
+	super(frog).draw(self)
+end
 
 player = class(frog)
 function player:constructor(...)
@@ -1112,10 +1123,7 @@ function player:update()
 	if(btnp(2)) self:leap(true)
 
 	if(btnp(4)) self:inspect()
-	if(btnp(5)) then
-		sfx(18)
-		sfx(19)
-	end
+	if(btnp(5)) self:attack()
 
 	if(false) then
 		next_area = game.cur_area.id+1
