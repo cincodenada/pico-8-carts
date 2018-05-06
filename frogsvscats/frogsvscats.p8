@@ -83,6 +83,7 @@ local credits = {
 	roles = {
 		"game programming",
 		"game design",
+		"ace sound design",
 		"high-quality programmer art",
 		"top-notch animation",
 		"map design",
@@ -92,10 +93,10 @@ local credits = {
 		"people who actually\ndidn't test much, really",
 	},
 	extra_roles = {
-		{"emotional support","myka dubay","anna barton"},
-		{"inspiration and reference code","finn aka @relsqui"},
 		{"beta testers","friendly ludum dare participants"},
 		{"title font","pixel noir by mirz123"},
+		{"inspiration and reference code","finn aka @relsqui"},
+		{"emotional support","myka dubay","anna barton"},
 	},
 	name = "joel bradshaw",
 	countdown = nil,
@@ -640,7 +641,7 @@ function game:player_door()
 end
 function game:player_item()
 	for i in all(self.items) do
-		if(i:intersects(self.player) and i.name != "" and not self.player:has_item(i.name)) return i
+		if(i:intersects(self.player) and i.name and not self.player:has_item(i.name)) return i
 	end
 end
 
