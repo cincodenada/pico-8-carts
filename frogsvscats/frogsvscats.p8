@@ -554,6 +554,8 @@ function game:draw_texts(bg)
 	end
 end
 function game:dbg(txt)
+	-- Work around nils being empty table entries
+	if(txt == nil) txt = "[nil]"
 	add(self.debug, txt)
 end
 function game:draw_debug()
@@ -759,18 +761,30 @@ visible = class(has_location)
 function visible:constructor(x,y,sprite)
 	self.sprite = sprite
 	self.sprites = {}
+	self.aux_pos = {}
 	self.facing = 1
 	super(visible, self, x, y, self.sprite.w*8, self.sprite.h*8)
 end
 function visible:add_sprite(key, sprite) self.sprites[key] = sprite end
 function visible:set_sprite(key) self.cur_sprite = key end
-function visible:get_sprite()
+function visible:get_sprite(key)
+	if(key) return self.sprites[key]
+
 	if(self.cur_sprite) return self.sprites[self.cur_sprite]
 	return self.sprite
 end
+function visible:set_aux(key, x, y)
+	if(not x) x = 0
+	if(not y) y = 0
+	self.aux_pos[key] = {x=x,y=y}
+end
+function visible:remove_aux(key) self.aux_pos[key] = nil end
 function visible:draw()
 	local sprite = self:get_sprite()
 	if(sprite) sprite:draw(self.x, self.y, self.facing)
+	for key, pos in pairs(self.aux_pos) do
+		self.sprites[key]:draw(self.x+pos.x, self.y+pos.y)
+	end
 	super(visible).draw(self)
 end
 
@@ -1038,6 +1052,7 @@ function frog:constructor(x,y)
 	super(frog, self,
 		x, y, sprite(2, 2, {0,count=16}))
 	self:add_sprite('attack',sprite(2,2,{64,count=3}))
+	self:add_sprite('tongue',sprite(1,1,{70,count=4}))
 end
 function frog:base_fpf() return 1 end
 function frog:jump(dir)
@@ -1116,12 +1131,37 @@ function frog:attack()
 	self:reset_anim()
 	self:clear_move()
 	self:set_sprite('attack')
+	self:set_frame_slow(2,2,20)
 	self:animate(false)
 	sfx(18)
 	sfx(19)
 end
+function frog:update_anim()
+	super(frog).update_anim(self)
+	-- If we're ready to start the tongue
+	if(self.attacking) then
+		if(self:get_sprite():frame() == 2) then
+			if(self:get_sprite():entered(2)) then
+				self.tongue_frame = 0
+				self.tongue_dir = 1
+			else
+				if(self.tongue_frame == 5) self.tongue_dir=-1
+				self.tongue_frame += self.tongue_dir*0.5
+			end
+			self:set_aux('tongue',self.w+self.tongue_frame, -self.h+8)
+			self:get_sprite('tongue'):set_frame(min(self.tongue_frame, 2))
+		elseif self:get_sprite():entered(0) then
+			self.attacking = false
+			self:remove_aux('tongue')
+		end
+	end
+end
 function frog:draw()
 	super(frog).draw(self)
+	if(self.attacking and self.tongue_frame) then
+		local ts = {x=self.x+self.w*self.facing, y=self.y-self.h+8}
+		line(ts.x, ts.y, ts.x+self.tongue_frame, ts.y, 8)
+	end
 end
 
 player = class(frog)
