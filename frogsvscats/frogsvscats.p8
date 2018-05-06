@@ -1265,42 +1265,58 @@ function player:has_item(name)
 	return false
 end
 
-local btnstate = {}
-local framestep = false
-function toggle_framestep()
-	framestep = not framestep
-
-	local to = "on"
-	if(framestep) to = "off"
-	menuitem(1,"framestep "..to, toggle_framestep)
+local framestep = {
+	enabled = false,
+	btnstate = {},
+	trigger = 4,
+}
+function framestep:init()
+	menuitem(1,"framestep on", framestep.toggle)
 end
-function _init()
-	menuitem(1,"framestep on", toggle_framestep)
-	credits:init()
-	game:reset()
+-- This function is "static" so it can be a callback
+function framestep:toggle()
+	framestep.enabled = not framestep.enabled
+
+	local to = framestep.enabled and "off" or "on"
+	menuitem(1,"framestep "..to, framestep.toggle)
 end
-
-
-function _update()
-	-- frame-by-frame
-	if(framestep and not btnp(4)) then
-		for n=0,5 do
-			if(btnp(n)) btnstate[n] = true
+function framestep:update()
+	if(self.enabled and not btnp(self.trigger)) then
+		if(self.just_stepped) then
+			self.just_stepped = false
+			self.btnstate = {}
 		end
-		btnstate[4] = false
-		return
-	end
-	game:update()
-	if(btnp(4)) btnstate = {}
-end
 
-function btnq(n)
-	if(framestep) then
-	  return btnstate[n]
+		for n=0,5 do
+			if(btnp(n)) self.btnstate[n] = true
+		end
+		self.btnstate[self.trigger] = false
+		return true
+	else
+		self.just_stepped = true
+		return false
+	end
+end
+function framestep:button(n)
+	if(self.enabled) then
+	  return self.btnstate[n]
 	else
 	  return btnp(n)
 	end
 end
+
+function _init()
+	framestep:init()
+	credits:init()
+	game:reset()
+end
+
+function _update()
+	if(framestep:update()) return
+	game:update()
+end
+
+function btnq(n) return framestep:button(n) end
 
 function _draw()
 	if(credits.countdown and credits.countdown <= 0) then
