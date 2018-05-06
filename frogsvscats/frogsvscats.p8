@@ -930,6 +930,7 @@ function entity:move(dx,dy)
 	self.x += dx*self.facing
 	self.y += dy
 end
+function entity:clear_move() self.cur_move = nil self.next_move = nil end
 function entity:add_move(dx,dy,vx,vy)
 	if(not self.next_move) self.next_move = { dx=abs(dx), dy=abs(dy), vx=vx*self.facing, vy=vy, x0=self.x, y0=self.y }
 end
@@ -1104,6 +1105,8 @@ end
 function frog:attack()
 	self.attacking = true
 	self:set_sprite('attack')
+	self:reset_jump()
+	self:clear_move()
 	self:set_frame(0)
 	self:animate(false)
 	sfx(18)
