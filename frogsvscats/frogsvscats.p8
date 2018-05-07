@@ -117,6 +117,7 @@ local lore = {
 				east = 4,
 				up = "the sun. it hurts your eyes. maybe you should try another door.",
 			},
+			link_order = {"north","east","up","south"},
 		},
 		{
 			id = 2,
@@ -361,10 +362,18 @@ function game:load_area(id, from_door, player_pos)
 	end
 	local dooridx = 1 -- todo: randomize
 	local player_door = nil
-	for label,info in pairs(a.links) do
-		self:add_door(label, info, dooridx)
-		if(label == from_door) player_door = self.doors[dooridx]
-		dooridx += 1
+	if(a.link_order) then
+		for label in all(a.link_order) do
+			self:add_door(label, a.links[label], dooridx)
+			if(label == from_door) player_door = self.doors[dooridx]
+			dooridx += 1
+		end
+	else
+		for label,info in pairs(a.links) do
+			self:add_door(label, info, dooridx)
+			if(label == from_door) player_door = self.doors[dooridx]
+			dooridx += 1
+		end
 	end
 
 	self:load_items()
